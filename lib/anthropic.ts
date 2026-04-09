@@ -13,10 +13,9 @@ export function getAnthropicClient(): Anthropic {
 
 // Try these models in order — different API keys have access to different models
 export const AI_MODELS = [
+  'claude-sonnet-4-20250514',
   'claude-sonnet-4-5-20250514',
-  'claude-3-7-sonnet-20250219',
   'claude-3-5-sonnet-20241022',
-  'claude-3-5-sonnet-20240620',
 ] as const;
 
 export async function callWithFallback(
