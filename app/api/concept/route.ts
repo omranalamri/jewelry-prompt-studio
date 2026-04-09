@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { getAnthropicClient } from '@/lib/anthropic';
 import { CONCEPT_SYSTEM_PROMPT } from '@/lib/prompts/concept';
+
+export const maxDuration = 60;
 import { parseClaudeJSON } from '@/lib/utils/parseResponse';
 import Anthropic from '@anthropic-ai/sdk';
 

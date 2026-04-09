@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { getAnthropicClient } from '@/lib/anthropic';
 import { VISION_SYSTEM_PROMPT } from '@/lib/prompts/vision';
+
+export const maxDuration = 60;
 import { fileToImageBlock } from '@/lib/utils/imageUtils';
 import { parseClaudeJSON } from '@/lib/utils/parseResponse';
 import { VisionResult } from '@/types/prompts';

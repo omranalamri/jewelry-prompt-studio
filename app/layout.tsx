@@ -14,8 +14,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Jewelry Prompt Studio",
-  description: "AI-powered prompt engineering for luxury jewelry marketing",
+  title: {
+    default: "Jewelry Prompt Studio",
+    template: "%s | Jewelry Prompt Studio",
+  },
+  description: "AI-powered prompt engineering for luxury jewelry marketing. Generate production-ready prompts for Midjourney, DALL-E 3, Runway, and Kling.",
+  openGraph: {
+    title: "Jewelry Prompt Studio",
+    description: "Transform your jewelry marketing with AI. Analyze references, develop concepts, and generate production-ready prompts.",
+    type: "website",
+    siteName: "Jewelry Prompt Studio",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Jewelry Prompt Studio",
+    description: "AI-powered prompt engineering for luxury jewelry marketing.",
+  },
 };
 
 export default function RootLayout({

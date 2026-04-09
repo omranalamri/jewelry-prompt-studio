@@ -23,6 +23,10 @@ export async function POST(req: NextRequest) {
       return errorResponse('FILE_TOO_LARGE', 'Image must be under 10MB.', 400);
     }
 
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return errorResponse('BLOB_NOT_CONFIGURED', 'Image storage is not configured yet. Prompts still work without it.', 503);
+    }
+
     const blob = await put(`${context}/${crypto.randomUUID()}-${file.name}`, file, {
       access: 'public',
     });

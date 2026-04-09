@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { getAnthropicClient } from '@/lib/anthropic';
 import { ANALYZE_SYSTEM_PROMPT } from '@/lib/prompts/analyze';
+
+export const maxDuration = 60;
 import { fileToImageBlock } from '@/lib/utils/imageUtils';
 import { parseClaudeJSON } from '@/lib/utils/parseResponse';
 import { AnalyzeResult } from '@/types/prompts';
