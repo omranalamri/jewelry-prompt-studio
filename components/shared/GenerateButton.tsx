@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wand2, Loader2, Download, ExternalLink, Play, Image as ImageIcon, RefreshCw, ChevronDown } from 'lucide-react';
+import { Wand2, Loader2, Download, ExternalLink, Play, Image as ImageIcon, RefreshCw, ChevronDown, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PlatformId } from '@/types/platforms';
@@ -291,9 +291,27 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
                 <Download className="h-3.5 w-3.5 mr-1.5" />
                 Download
               </Button>
-              <Button variant="outline" size="sm" onClick={() => window.open(resultUrl, '_blank')} className="flex-1">
-                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                Open Full Size
+              <Button variant="outline" size="sm" onClick={async () => {
+                try {
+                  await fetch('/api/repository', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      category: 'generated',
+                      title: `${modelUsed || platform} — ${new Date().toLocaleDateString()}`,
+                      description: prompt.slice(0, 200),
+                      imageUrl: resultUrl,
+                      tags: [platform, modelUsed || ''].filter(Boolean),
+                    }),
+                  });
+                  toast.success('Saved to repository');
+                } catch { toast.error('Failed to save'); }
+              }} className="flex-1">
+                <FolderPlus className="h-3.5 w-3.5 mr-1.5" />
+                Save to Repo
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => window.open(resultUrl, '_blank')}>
+                <ExternalLink className="h-3.5 w-3.5" />
               </Button>
               <Button variant="ghost" size="sm" onClick={handleRetry}>
                 <RefreshCw className="h-3.5 w-3.5" />
