@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
+import Replicate from 'replicate';
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
@@ -14,86 +15,84 @@ export async function POST(req: NextRequest) {
       return errorResponse('MISSING_PROMPT', 'No prompt provided.', 400);
     }
 
-    const apiKey = process.env.NANOBANANA_API_KEY;
-    if (!apiKey) {
-      return errorResponse('NOT_CONFIGURED', 'Video generation is not configured (missing NANOBANANA_API_KEY).', 503);
+    if (!process.env.REPLICATE_API_TOKEN) {
+      return errorResponse('NOT_CONFIGURED', 'Video generation not configured (missing REPLICATE_API_TOKEN).', 503);
     }
 
-    const baseUrl = 'https://nanobananavideo.com/api/v1';
+    const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
+    // Strategy: use Minimax Video-01 for image-to-video, Veo 2 for text-to-video
     if (imageUrl) {
-      // Image-to-video
-      const response = await fetch(`${baseUrl}/image-to-video.php`, {
-        method: 'POST',
-        headers: {
-          'X-API-Key': apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image_urls: [imageUrl],
+      // Image-to-video with Minimax Video-01
+      try {
+        const prediction = await replicate.predictions.create({
+          model: 'minimax/video-01',
+          input: {
+            prompt,
+            first_frame_image: imageUrl,
+            prompt_optimizer: true,
+          },
+        });
+
+        return Response.json({
+          success: true,
+          data: {
+            id: prediction.id,
+            provider: 'replicate',
+            model: 'minimax/video-01',
+            status: 'processing',
+          },
+        });
+      } catch (e) {
+        console.error('Minimax error:', e);
+        return errorResponse('VIDEO_ERROR', 'Image-to-video generation failed.', 500);
+      }
+    }
+
+    // Text-to-video: try Google Veo 2 first, fall back to Minimax
+    try {
+      const prediction = await replicate.predictions.create({
+        model: 'google/veo-2',
+        input: {
           prompt,
-          resolution: '1080p',
           duration: duration || 5,
           aspect_ratio: aspectRatio || '16:9',
-        }),
+        },
       });
-
-      if (!response.ok) {
-        const err = await response.text();
-        console.error('NanoBanana I2V error:', response.status, err);
-        return errorResponse('VIDEO_ERROR', `Video generation failed (${response.status})`, 500);
-      }
-
-      const data = await response.json();
-      if (!data.success) {
-        return errorResponse('VIDEO_ERROR', data.error || 'Video generation failed.', 500);
-      }
 
       return Response.json({
         success: true,
         data: {
-          id: data.video_id,
-          provider: 'nanobanana',
+          id: prediction.id,
+          provider: 'replicate',
+          model: 'google/veo-2',
           status: 'processing',
-          creditsUsed: data.credits_used,
         },
       });
-    } else {
-      // Text-to-video
-      const response = await fetch(`${baseUrl}/text-to-video.php`, {
-        method: 'POST',
-        headers: {
-          'X-API-Key': apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt,
-          resolution: '1080p',
-          duration: duration || 5,
-          aspect_ratio: aspectRatio || '16:9',
-        }),
-      });
+    } catch {
+      // Fallback to Minimax text-to-video
+      try {
+        const prediction = await replicate.predictions.create({
+          model: 'minimax/video-01',
+          input: {
+            prompt,
+            prompt_optimizer: true,
+          },
+        });
 
-      if (!response.ok) {
-        const err = await response.text();
-        console.error('NanoBanana T2V error:', response.status, err);
-        return errorResponse('VIDEO_ERROR', `Video generation failed (${response.status})`, 500);
+        return Response.json({
+          success: true,
+          data: {
+            id: prediction.id,
+            provider: 'replicate',
+            model: 'minimax/video-01',
+            status: 'processing',
+          },
+        });
+      } catch (e2) {
+        console.error('Video fallback error:', e2);
+        return errorResponse('VIDEO_ERROR', 'Video generation failed on all providers.', 500);
       }
-
-      const data = await response.json();
-      if (!data.success) {
-        return errorResponse('VIDEO_ERROR', data.error || 'Video generation failed.', 500);
-      }
-
-      return Response.json({
-        success: true,
-        data: {
-          id: data.video_id,
-          provider: 'nanobanana',
-          status: 'processing',
-          creditsUsed: data.credits_used,
-        },
-      });
     }
   } catch (error) {
     console.error('Video generation error:', error);

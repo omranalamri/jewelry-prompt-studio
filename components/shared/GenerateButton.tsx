@@ -30,7 +30,7 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/generate/status?videoId=${videoId}&provider=nanobanana`);
+        const res = await fetch(`/api/generate/status?id=${videoId}&provider=replicate`);
         const json = await res.json();
         if (json.success) {
           if (json.data.status === 'completed' && json.data.resultUrl) {
