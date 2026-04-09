@@ -9,63 +9,19 @@ function errorResponse(code: string, message: string, status: number) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, platform, aspectRatio } = await req.json();
+    const { prompt, platform, aspectRatio, negativePrompt } = await req.json();
 
     if (!prompt) {
       return errorResponse('MISSING_PROMPT', 'No prompt provided.', 400);
     }
 
     if (!process.env.REPLICATE_API_TOKEN) {
-      return errorResponse('NOT_CONFIGURED', 'Image generation not configured (missing REPLICATE_API_TOKEN).', 503);
+      return errorResponse('NOT_CONFIGURED', 'Image generation not configured.', 503);
     }
 
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
-    if (platform === 'dalle') {
-      // Use Recraft for product photography if available, else Nano Banana
-      if (process.env.RECRAFT_API_TOKEN) {
-        const response = await fetch('https://external.api.recraft.ai/v1/images/generations', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.RECRAFT_API_TOKEN}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prompt,
-            style: 'realistic_image',
-            size: aspectRatio === '9:16' ? '1024x1820' : aspectRatio === '1:1' ? '1024x1024' : '1365x1024',
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const imageUrl = data.data?.[0]?.url;
-          if (imageUrl) {
-            return Response.json({
-              success: true,
-              data: { id: crypto.randomUUID(), provider: 'recraft', status: 'completed', resultUrl: imageUrl },
-            });
-          }
-        }
-        // Fall through to Nano Banana if Recraft fails
-      }
-
-      // Nano Banana (Google Gemini image gen) via Replicate
-      const output = await replicate.run('google/nano-banana', {
-        input: {
-          prompt,
-          aspect_ratio: aspectRatio || '1:1',
-          output_format: 'webp',
-        },
-      });
-      const resultUrl = Array.isArray(output) ? String(output[0]) : String(output);
-      return Response.json({
-        success: true,
-        data: { id: crypto.randomUUID(), provider: 'nano-banana', status: 'completed', resultUrl },
-      });
-    }
-
-    // Midjourney-style: use Flux Pro, fall back to Nano Banana
+    // Strip Midjourney-specific parameters
     const cleanPrompt = prompt
       .replace(/--ar\s+\S+/g, '')
       .replace(/--style\s+\S+/g, '')
@@ -74,39 +30,105 @@ export async function POST(req: NextRequest) {
       .replace(/--no\s+.*/g, '')
       .trim();
 
+    // Parse aspect ratio from MJ prompt
     const arMatch = prompt.match(/--ar\s+(\d+:\d+)/);
     const ar = arMatch ? arMatch[1] : (aspectRatio || '1:1');
 
-    try {
-      // Try Flux Pro first
-      const arMap: Record<string, { width: number; height: number }> = {
-        '1:1': { width: 1024, height: 1024 },
-        '4:5': { width: 896, height: 1120 },
-        '5:4': { width: 1120, height: 896 },
-        '16:9': { width: 1344, height: 768 },
-        '9:16': { width: 768, height: 1344 },
-        '3:2': { width: 1216, height: 832 },
-        '2:3': { width: 832, height: 1216 },
-      };
-      const dims = arMap[ar] || arMap['1:1'];
+    if (platform === 'dalle') {
+      // DALL-E prompts → Nano Banana Pro (Google's best, 2K resolution)
+      try {
+        const output = await replicate.run('google/nano-banana-pro', {
+          input: {
+            prompt: cleanPrompt,
+            resolution: '2K',
+            aspect_ratio: ar,
+            output_format: 'jpg',
+            safety_filter_level: 'block_only_high',
+          },
+        });
+        const resultUrl = Array.isArray(output) ? String(output[0]) : String(output);
+        return Response.json({
+          success: true,
+          data: {
+            id: crypto.randomUUID(),
+            provider: 'nano-banana-pro',
+            model: 'google/nano-banana-pro',
+            status: 'completed',
+            resultUrl,
+          },
+        });
+      } catch (e) {
+        console.error('Nano Banana Pro failed, trying Recraft:', e);
+        // Fallback to Recraft
+        if (process.env.RECRAFT_API_TOKEN) {
+          const response = await fetch('https://external.api.recraft.ai/v1/images/generations', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.RECRAFT_API_TOKEN}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              prompt: cleanPrompt,
+              style: 'realistic_image',
+              size: ar === '9:16' ? '1024x1820' : ar === '1:1' ? '1024x1024' : '1365x1024',
+            }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const imageUrl = data.data?.[0]?.url;
+            if (imageUrl) {
+              return Response.json({
+                success: true,
+                data: { id: crypto.randomUUID(), provider: 'recraft', model: 'recraft-v3', status: 'completed', resultUrl: imageUrl },
+              });
+            }
+          }
+        }
+        throw e;
+      }
+    }
 
-      const output = await replicate.run('black-forest-labs/flux-1.1-pro', {
-        input: { prompt: cleanPrompt, width: dims.width, height: dims.height, prompt_upsampling: true },
+    // Midjourney prompts → Flux 1.1 Pro Ultra (4MP, raw realism mode)
+    try {
+      const output = await replicate.run('black-forest-labs/flux-1.1-pro-ultra', {
+        input: {
+          prompt: cleanPrompt,
+          aspect_ratio: ar,
+          raw: true,
+          output_format: 'jpg',
+        },
       });
       const resultUrl = typeof output === 'string' ? output : String(output);
       return Response.json({
         success: true,
-        data: { id: crypto.randomUUID(), provider: 'replicate-flux', status: 'completed', resultUrl },
+        data: {
+          id: crypto.randomUUID(),
+          provider: 'flux-ultra',
+          model: 'black-forest-labs/flux-1.1-pro-ultra',
+          status: 'completed',
+          resultUrl,
+        },
       });
     } catch {
-      // Fallback to Nano Banana
-      const output = await replicate.run('google/nano-banana', {
-        input: { prompt: cleanPrompt, aspect_ratio: ar, output_format: 'webp' },
+      // Fallback: Nano Banana 2 (fast, great quality)
+      const output = await replicate.run('google/nano-banana-2', {
+        input: {
+          prompt: cleanPrompt,
+          resolution: '1K',
+          aspect_ratio: ar,
+          output_format: 'jpg',
+        },
       });
       const resultUrl = Array.isArray(output) ? String(output[0]) : String(output);
       return Response.json({
         success: true,
-        data: { id: crypto.randomUUID(), provider: 'nano-banana', status: 'completed', resultUrl },
+        data: {
+          id: crypto.randomUUID(),
+          provider: 'nano-banana-2',
+          model: 'google/nano-banana-2',
+          status: 'completed',
+          resultUrl,
+        },
       });
     }
   } catch (error) {

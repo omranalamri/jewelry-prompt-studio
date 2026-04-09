@@ -21,6 +21,7 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [modelUsed, setModelUsed] = useState<string | null>(null);
 
   const isVideo = isVideoPlatform(platform);
 
@@ -81,8 +82,9 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
         }
 
         setVideoId(json.data.id);
+        setModelUsed(json.data.model || json.data.provider);
         setState('polling');
-        toast.info('Video is being generated... This may take a minute.');
+        toast.info(`Generating video with ${json.data.model || 'AI'}... This may take a minute.`);
       } else {
         // Image generation via Replicate/Recraft
         const res = await fetch('/api/generate/image', {
@@ -100,8 +102,9 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
         }
 
         setResultUrl(json.data.resultUrl);
+        setModelUsed(json.data.model || json.data.provider);
         setState('completed');
-        toast.success('Image generated!');
+        toast.success(`Image generated with ${json.data.model || json.data.provider}!`);
       }
     } catch {
       setState('failed');
@@ -132,6 +135,7 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
     setError(null);
     setResultUrl(null);
     setVideoId(null);
+    setModelUsed(null);
   }, []);
 
   return (
@@ -192,6 +196,14 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-3"
           >
+            {modelUsed && (
+              <div className="flex items-center gap-2">
+                <Wand2 className="h-3.5 w-3.5 text-gold" />
+                <span className="text-xs text-muted-foreground">
+                  Generated with <span className="font-medium text-foreground">{modelUsed}</span>
+                </span>
+              </div>
+            )}
             <div className="relative rounded-xl overflow-hidden border shadow-md bg-black">
               {isVideo ? (
                 <video
