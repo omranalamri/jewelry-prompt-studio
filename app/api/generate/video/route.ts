@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import Replicate from 'replicate';
 import { VIDEO_MODELS, getVideoModel, getBestVideoModel, formatCost, ModelInfo } from '@/lib/creative/model-registry';
+import { getDb } from '@/lib/db';
 
 export const maxDuration = 300;
 
@@ -8,51 +9,77 @@ function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
 }
 
-async function generateStillFrame(replicate: Replicate, prompt: string, ar: string): Promise<string | null> {
+// STEP 1: Generate a NEW creative still frame from the prompt
+// This is NOT the original photo — it's a fresh AI-generated image
+// that matches the creative direction while keeping the jewelry accurate
+async function generateCreativeFrame(
+  replicate: Replicate,
+  prompt: string,
+  aspectRatio: string,
+  referenceImageUrl?: string
+): Promise<string | null> {
   try {
     const output = await replicate.run('google/nano-banana-pro', {
       input: {
-        prompt: `High quality still frame for video: ${prompt}`,
-        resolution: '2K', aspect_ratio: ar, output_format: 'jpg', safety_filter_level: 'block_only_high',
+        prompt: referenceImageUrl
+          ? `Create a production-ready still frame for a luxury jewelry video. Use the reference image to match the exact jewelry piece (metal, stones, design details), but apply this creative direction: ${prompt}`
+          : `Create a production-ready still frame for a luxury jewelry video: ${prompt}`,
+        resolution: '2K',
+        aspect_ratio: aspectRatio,
+        output_format: 'jpg',
+        safety_filter_level: 'block_only_high',
+        // Pass reference image so Nano Banana matches the jewelry design
+        ...(referenceImageUrl && { image_input: [referenceImageUrl] }),
       },
     });
     return Array.isArray(output) ? String(output[0]) : String(output);
-  } catch { return null; }
+  } catch (e) {
+    console.error('Frame generation failed:', e instanceof Error ? e.message.slice(0, 100) : e);
+    // Fallback: try Flux Ultra with reference guidance
+    try {
+      const output = await replicate.run('black-forest-labs/flux-1.1-pro-ultra', {
+        input: {
+          prompt,
+          aspect_ratio: aspectRatio,
+          raw: true,
+          output_format: 'jpg',
+          ...(referenceImageUrl && { image_prompt: referenceImageUrl, image_prompt_strength: 0.3 }),
+        },
+      });
+      return typeof output === 'string' ? output : String(output);
+    } catch {
+      return null;
+    }
+  }
 }
 
-async function runVideoModel(
-  replicate: Replicate,
-  modelInfo: ModelInfo,
-  prompt: string,
-  firstFrameUrl: string | null,
-  duration: number,
-  aspectRatio: string
-): Promise<{ id: string; provider: string }> {
-  if (modelInfo.id === 'runway') {
-    const apiKey = process.env.RUNWAYML_API_SECRET;
-    if (!apiKey) throw new Error('Runway not configured');
-    if (!firstFrameUrl) throw new Error('Runway needs a reference frame');
+async function runWithRunway(imageUrl: string, prompt: string, duration: number) {
+  const apiKey = process.env.RUNWAYML_API_SECRET;
+  if (!apiKey) throw new Error('Runway not configured');
 
-    const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'X-Runway-Version': '2024-11-06',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gen3a_turbo',
-        promptImage: firstFrameUrl,
-        promptText: prompt.slice(0, 512),
-        duration: duration <= 5 ? 5 : 10,
-      }),
-    });
-    if (!response.ok) throw new Error(`Runway ${response.status}`);
-    const data = await response.json();
-    return { id: data.id, provider: 'runway' };
-  }
+  const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'X-Runway-Version': '2024-11-06',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gen3a_turbo',
+      promptImage: imageUrl,
+      promptText: prompt.slice(0, 512),
+      duration: duration <= 5 ? 5 : 10,
+    }),
+  });
+  if (!response.ok) throw new Error(`Runway ${response.status}`);
+  const data = await response.json();
+  return { id: data.id, provider: 'runway' as const };
+}
 
-  // Replicate models
+async function runWithReplicate(
+  replicate: Replicate, modelInfo: ModelInfo, prompt: string,
+  firstFrameUrl: string | null, duration: number, aspectRatio: string
+) {
   let input: Record<string, unknown>;
   if (modelInfo.id === 'veo-3') {
     input = { prompt, duration, aspect_ratio: aspectRatio, resolution: '1080p', generate_audio: true, ...(firstFrameUrl && { image: firstFrameUrl }) };
@@ -61,12 +88,8 @@ async function runVideoModel(
   } else {
     input = { prompt, prompt_optimizer: true, ...(firstFrameUrl && { first_frame_image: firstFrameUrl }) };
   }
-
-  const prediction = await replicate.predictions.create({
-    model: modelInfo.replicateId as `${string}/${string}`,
-    input,
-  });
-  return { id: prediction.id, provider: 'replicate' };
+  const prediction = await replicate.predictions.create({ model: modelInfo.replicateId as `${string}/${string}`, input });
+  return { id: prediction.id, provider: 'replicate' as const };
 }
 
 export async function POST(req: NextRequest) {
@@ -78,23 +101,45 @@ export async function POST(req: NextRequest) {
 
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
-    // Get or generate a reference still frame
-    let firstFrameUrl = referenceImageUrl || null;
-    if (!firstFrameUrl) {
-      firstFrameUrl = await generateStillFrame(replicate, prompt, aspectRatio);
-    }
-    const frameCost = (!referenceImageUrl && firstFrameUrl) ? 0.13 : 0;
+    // ================================================================
+    // THE CORRECT PIPELINE:
+    // 1. ALWAYS generate a NEW creative frame from the prompt
+    //    - If referenceImageUrl exists, use it as a REFERENCE for the
+    //      jewelry design (what the piece looks like), but the creative
+    //      direction (lighting, composition, mood) comes from the prompt
+    //    - The reference is NOT used directly as the video first frame
+    // 2. Animate that new creative frame into video
+    // ================================================================
 
-    // Build chain: requested model first, then remaining by quality
+    const firstFrameUrl = await generateCreativeFrame(replicate, prompt, aspectRatio, referenceImageUrl || undefined);
+    const frameCost = 0.13; // Nano Banana Pro cost for frame
+
+    if (!firstFrameUrl) {
+      return errorResponse('FRAME_FAILED', 'Could not generate the creative frame. Please try again.', 500);
+    }
+
+    // Save the creative frame to repository too
+    try {
+      const sql = getDb();
+      await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata)
+        VALUES ('generated', ${'Video Frame — ' + new Date().toLocaleDateString()}, ${prompt.slice(0, 300)}, ${firstFrameUrl}, ${'{"frame","video-source"}'}, '{}')`;
+    } catch { /* non-critical */ }
+
+    // Now animate the creative frame
     const requested = requestedModelId ? getVideoModel(requestedModelId) : getBestVideoModel();
     const chain = requested
       ? [requested, ...VIDEO_MODELS.filter(m => m.id !== requested.id)]
       : VIDEO_MODELS;
 
-    // Try each model — smooth fallback, report which one delivered
     for (const modelInfo of chain) {
       try {
-        const result = await runVideoModel(replicate, modelInfo, prompt, firstFrameUrl, duration, aspectRatio);
+        let result: { id: string; provider: 'runway' | 'replicate' };
+
+        if (modelInfo.id === 'runway') {
+          result = await runWithRunway(firstFrameUrl, prompt, duration);
+        } else {
+          result = await runWithReplicate(replicate, modelInfo, prompt, firstFrameUrl, duration, aspectRatio);
+        }
 
         return Response.json({
           success: true,
@@ -112,14 +157,15 @@ export async function POST(req: NextRequest) {
             firstFrameUrl,
             requestedModel: requestedModelId || chain[0].id,
             wasFirstChoice: modelInfo.id === (requestedModelId || chain[0].id),
+            pipeline: 'prompt → creative frame (Nano Banana Pro) → animate',
           },
         });
       } catch {
-        continue; // silently try next
+        continue;
       }
     }
 
-    return errorResponse('VIDEO_ERROR', 'All video models are currently unavailable. Please try again.', 500);
+    return errorResponse('VIDEO_ERROR', 'All video models are currently unavailable.', 500);
   } catch (error) {
     console.error('Video generation error:', error);
     return errorResponse('GENERATION_FAILED', 'Video generation failed.', 500);

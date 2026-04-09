@@ -41,6 +41,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
   const [modelUsed, setModelUsed] = useState<string | null>(null);
   const [costInfo, setCostInfo] = useState<string | null>(null);
   const [timeInfo, setTimeInfo] = useState<number | null>(null);
+  const [creativeFrameUrl, setCreativeFrameUrl] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const _showModelPicker = true; // always visible
 
@@ -102,6 +103,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
         setVideoProvider(json.data.provider === 'runway' ? 'runway' : 'replicate');
         setModelUsed(json.data.model);
         setCostInfo(json.data.cost || null);
+        setCreativeFrameUrl(json.data.firstFrameUrl || null);
         setState('polling');
 
         const fallbackNote = json.data.wasFirstChoice === false ? ` (${json.data.model} used instead)` : '';
@@ -168,6 +170,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
     setModelUsed(null);
     setCostInfo(null);
     setTimeInfo(null);
+    setCreativeFrameUrl(null);
   }, []);
 
   return (
@@ -220,11 +223,25 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
 
       {/* Loading State */}
       {(state === 'generating' || state === 'polling') && (
-        <div className="flex items-center justify-center gap-3 py-3">
-          <Loader2 className="h-4 w-4 animate-spin text-gold" />
-          <span className="text-sm text-muted-foreground">
-            {state === 'generating' ? 'Submitting...' : 'Generating... This may take a minute'}
-          </span>
+        <div className="space-y-3">
+          {/* Show creative frame while video generates */}
+          {creativeFrameUrl && state === 'polling' && (
+            <div className="relative rounded-xl overflow-hidden border">
+              <img src={creativeFrameUrl} alt="Creative frame" className="w-full max-h-[300px] object-contain bg-black" />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="flex items-center gap-2 bg-black/60 text-white px-4 py-2 rounded-full text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Animating this frame...
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-center gap-3 py-2">
+            <Loader2 className="h-4 w-4 animate-spin text-gold" />
+            <span className="text-sm text-muted-foreground">
+              {state === 'generating' ? 'Creating creative frame...' : 'Animating... This may take a minute'}
+            </span>
+          </div>
         </div>
       )}
 
