@@ -17,16 +17,17 @@ interface GenerateButtonProps {
 const isVideoPlatform = (p: PlatformId) => p === 'runway' || p === 'kling';
 
 const IMAGE_MODEL_OPTIONS = [
-  { id: 'nano-banana-2', name: 'Nano Banana 2', badge: 'Fast + Consistent' },
-  { id: 'nano-banana-pro', name: 'Nano Banana Pro', badge: '2K Best Quality' },
-  { id: 'flux-ultra', name: 'Flux Ultra', badge: '4MP Photorealism' },
-  { id: 'recraft-v3', name: 'Recraft V3', badge: 'Product Photography' },
+  { id: 'nano-banana-pro', name: 'Nano Banana Pro', badge: 'Best Quality', cost: '$0.13', quality: 10 },
+  { id: 'flux-ultra', name: 'Flux Ultra', badge: '4MP Photorealistic', cost: '$0.06', quality: 9 },
+  { id: 'nano-banana-2', name: 'Nano Banana 2', badge: 'Fast + Consistent', cost: '$0.05', quality: 9 },
+  { id: 'recraft-v3', name: 'Recraft V3', badge: 'Product Photography', cost: '$0.04', quality: 8 },
+  { id: 'ideogram-v2', name: 'Ideogram V2', badge: 'Text + Detail', cost: '$0.08', quality: 8 },
 ];
 
 const VIDEO_MODEL_OPTIONS = [
-  { id: 'veo-3', name: 'Google Veo 3', badge: 'With Audio' },
-  { id: 'veo-2', name: 'Google Veo 2', badge: 'Fast' },
-  { id: 'minimax', name: 'Minimax Video', badge: 'Image-to-Video' },
+  { id: 'veo-3', name: 'Google Veo 3', badge: 'Best + Audio', cost: '$1.25', quality: 10 },
+  { id: 'veo-2', name: 'Google Veo 2', badge: 'Fast + Quality', cost: '$0.50', quality: 9 },
+  { id: 'minimax', name: 'Minimax Video', badge: 'Image-to-Video', cost: '$0.88', quality: 7 },
 ];
 
 export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
@@ -35,6 +36,8 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modelUsed, setModelUsed] = useState<string | null>(null);
+  const [costInfo, setCostInfo] = useState<string | null>(null);
+  const [timeInfo, setTimeInfo] = useState<number | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [showModelPicker, setShowModelPicker] = useState(false);
 
@@ -94,8 +97,9 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
 
         setVideoId(json.data.id);
         setModelUsed(json.data.model || json.data.provider);
+        setCostInfo(json.data.cost || null);
         setState('polling');
-        toast.info(`Generating video with ${json.data.model || 'AI'}... This may take a minute.`);
+        toast.info(`Generating video with ${json.data.model || 'AI'} (${json.data.cost || ''})... ~${Math.round((json.data.estimatedTime || 60) / 60)}min`);
       } else {
         const res = await fetch('/api/generate/image', {
           method: 'POST',
@@ -113,8 +117,10 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
 
         setResultUrl(json.data.resultUrl);
         setModelUsed(json.data.model || json.data.provider);
+        setCostInfo(json.data.cost || null);
+        setTimeInfo(json.data.timeSeconds || null);
         setState('completed');
-        toast.success(`Generated with ${json.data.model || json.data.provider}!`);
+        toast.success(`Generated with ${json.data.model} (${json.data.cost}, ${json.data.timeSeconds}s)`);
       }
     } catch {
       setState('failed');
@@ -146,6 +152,8 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
     setResultUrl(null);
     setVideoId(null);
     setModelUsed(null);
+    setCostInfo(null);
+    setTimeInfo(null);
   }, []);
 
   return (
@@ -175,8 +183,11 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
                     onClick={() => setSelectedModel(null)}
                     className={`text-xs px-3 py-2 rounded-lg border text-left transition-all ${!selectedModel ? 'border-gold bg-gold/5' : 'hover:border-gold/30'}`}
                   >
-                    <span className="font-medium block">Auto</span>
-                    <span className="text-muted-foreground text-[10px]">Best available</span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Auto</span>
+                      <span className="text-gold text-[10px]">Best</span>
+                    </div>
+                    <span className="text-muted-foreground text-[10px]">Highest quality first</span>
                   </button>
                   {modelOptions.map((m) => (
                     <button
@@ -184,8 +195,14 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
                       onClick={() => setSelectedModel(m.id)}
                       className={`text-xs px-3 py-2 rounded-lg border text-left transition-all ${selectedModel === m.id ? 'border-gold bg-gold/5' : 'hover:border-gold/30'}`}
                     >
-                      <span className="font-medium block">{m.name}</span>
-                      <span className="text-muted-foreground text-[10px]">{m.badge}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{m.name}</span>
+                        <span className="text-muted-foreground text-[10px]">{m.cost}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-muted-foreground text-[10px]">{m.badge}</span>
+                        <span className="text-[10px]">{'★'.repeat(Math.min(m.quality - 7, 3))}</span>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -249,11 +266,17 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
             className="space-y-3"
           >
             {modelUsed && (
-              <div className="flex items-center gap-2">
-                <Wand2 className="h-3.5 w-3.5 text-gold" />
-                <span className="text-xs text-muted-foreground">
-                  Generated with <span className="font-medium text-foreground">{modelUsed}</span>
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wand2 className="h-3.5 w-3.5 text-gold" />
+                  <span className="text-xs text-muted-foreground">
+                    Generated with <span className="font-medium text-foreground">{modelUsed}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {costInfo && <span className="px-2 py-0.5 rounded-full bg-muted font-medium">{costInfo}</span>}
+                  {timeInfo && <span>{timeInfo}s</span>}
+                </div>
               </div>
             )}
             <div className="relative rounded-xl overflow-hidden border shadow-md bg-black">
