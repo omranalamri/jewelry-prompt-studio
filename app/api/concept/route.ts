@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
-import { getAnthropicClient } from '@/lib/anthropic';
+import { getAnthropicClient, callWithFallback } from '@/lib/anthropic';
 import { CONCEPT_SYSTEM_PROMPT } from '@/lib/prompts/concept';
-
-export const maxDuration = 60;
 import { parseClaudeJSON } from '@/lib/utils/parseResponse';
 import Anthropic from '@anthropic-ai/sdk';
+
+export const maxDuration = 60;
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
@@ -34,15 +34,19 @@ export async function POST(req: NextRequest) {
     }
 
     const anthropic = getAnthropicClient();
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250514',
-      max_tokens: 1500,
-      system: CONCEPT_SYSTEM_PROMPT,
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
-    });
+    const formattedMessages = messages.map((m: { role: string; content: string }) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
+
+    const message = await callWithFallback((model) =>
+      anthropic.messages.create({
+        model,
+        max_tokens: 1500,
+        system: CONCEPT_SYSTEM_PROMPT,
+        messages: formattedMessages,
+      })
+    );
 
     const rawText = message.content
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')
@@ -61,10 +65,14 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     if (error instanceof Anthropic.APIError) {
+      console.error('Anthropic API error:', error.status, error.message);
       if (error.status === 429) {
         return errorResponse('AI_RATE_LIMIT', 'High demand right now — please wait 30 seconds and try again.', 429);
       }
-      return errorResponse('AI_ERROR', 'AI service error. Please try again.', 500);
+      if (error.status === 401 || error.status === 403) {
+        return errorResponse('AI_AUTH_ERROR', 'API key is invalid or expired. Please check your ANTHROPIC_API_KEY.', 500);
+      }
+      return errorResponse('AI_ERROR', `AI service error (${error.status}). Please try again.`, 500);
     }
     console.error('Concept error:', error);
     return errorResponse('UNKNOWN', 'An unexpected error occurred.', 500);

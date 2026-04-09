@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
-import { getAnthropicClient } from '@/lib/anthropic';
+import { getAnthropicClient, callWithFallback } from '@/lib/anthropic';
 import { VISION_SYSTEM_PROMPT } from '@/lib/prompts/vision';
-
-export const maxDuration = 60;
 import { fileToImageBlock } from '@/lib/utils/imageUtils';
 import { parseClaudeJSON } from '@/lib/utils/parseResponse';
 import { VisionResult } from '@/types/prompts';
 import Anthropic from '@anthropic-ai/sdk';
+
+export const maxDuration = 60;
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
@@ -40,12 +40,14 @@ export async function POST(req: NextRequest) {
     ];
 
     const anthropic = getAnthropicClient();
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250514',
-      max_tokens: 2000,
-      system: VISION_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: contentBlocks }],
-    });
+    const message = await callWithFallback((model) =>
+      anthropic.messages.create({
+        model,
+        max_tokens: 2000,
+        system: VISION_SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: contentBlocks }],
+      })
+    );
 
     const rawText = message.content
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')
@@ -61,10 +63,14 @@ export async function POST(req: NextRequest) {
     return Response.json({ success: true, data, sessionId });
   } catch (error) {
     if (error instanceof Anthropic.APIError) {
+      console.error('Anthropic API error:', error.status, error.message);
       if (error.status === 429) {
         return errorResponse('AI_RATE_LIMIT', 'High demand right now — please wait 30 seconds and try again.', 429);
       }
-      return errorResponse('AI_ERROR', 'AI service error. Please try again.', 500);
+      if (error.status === 401 || error.status === 403) {
+        return errorResponse('AI_AUTH_ERROR', 'API key is invalid or expired. Please check your ANTHROPIC_API_KEY.', 500);
+      }
+      return errorResponse('AI_ERROR', `AI service error (${error.status}). Please try again.`, 500);
     }
     console.error('Vision error:', error);
     return errorResponse('UNKNOWN', 'An unexpected error occurred.', 500);
