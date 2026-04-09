@@ -12,6 +12,7 @@ type GenerationState = 'idle' | 'generating' | 'polling' | 'completed' | 'failed
 interface GenerateButtonProps {
   prompt: string;
   platform: PlatformId;
+  referenceImageUrl?: string;
 }
 
 const isVideoPlatform = (p: PlatformId) => p === 'runway' || p === 'kling';
@@ -30,7 +31,7 @@ const VIDEO_MODEL_OPTIONS = [
   { id: 'minimax', name: 'Minimax Video', badge: 'Image-to-Video', cost: '$0.88', quality: 7 },
 ];
 
-export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
+export function GenerateButton({ prompt, platform, referenceImageUrl }: GenerateButtonProps) {
   const [state, setState] = useState<GenerationState>('idle');
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
@@ -104,7 +105,7 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
         const res = await fetch('/api/generate/image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, platform, model: selectedModel }),
+          body: JSON.stringify({ prompt, platform, model: selectedModel, referenceImageUrl }),
         });
         const json = await res.json();
 

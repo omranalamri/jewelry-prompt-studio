@@ -17,9 +17,10 @@ interface PromptCardProps {
   isRecommended?: boolean;
   onSave?: () => void;
   showGenerate?: boolean;
+  referenceImageUrl?: string;
 }
 
-export function PromptCard({ platform, prompt, isRecommended, onSave, showGenerate = true }: PromptCardProps) {
+export function PromptCard({ platform, prompt, isRecommended, onSave, showGenerate = true, referenceImageUrl }: PromptCardProps) {
   const handleExport = () => {
     const blob = new Blob([prompt], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -78,7 +79,7 @@ export function PromptCard({ platform, prompt, isRecommended, onSave, showGenera
           {showGenerate && (
             <>
               <Separator />
-              <GenerateButton prompt={prompt} platform={platform} />
+              <GenerateButton prompt={prompt} platform={platform} referenceImageUrl={referenceImageUrl} />
             </>
           )}
         </CardContent>

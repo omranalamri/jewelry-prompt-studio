@@ -50,8 +50,9 @@ Respond ONLY with valid JSON. No markdown, no preamble, no explanation outside t
 {
   "analysis": {
     "reference": "Detailed description of what the reference image shows — composition, lighting, mood, styling, color palette",
+    "pose": "CRITICAL: Exact pose/composition to replicate — camera angle (e.g. 45° above, eye-level, 3/4 profile), subject position in frame (centered, rule of thirds left), hand/body position if visible (fingers curled, wrist turned, head tilted), exact framing (extreme close-up, medium shot, full body), depth of field, and any props or surfaces visible",
     "assets": "Description of the jewelry assets — type, metal, stones, design style, finish",
-    "lighting": "Specific lighting setup observed or inferred",
+    "lighting": "SPECIFIC lighting: key light direction (e.g. 45° camera-left, above), fill ratio, rim/back light position, light quality (soft/hard), color temperature, any colored gels or reflections",
     "mood": "Overall aesthetic mood and brand positioning",
     "strategy": "Recommended creative approach to recreate this with the user's jewelry"
   },
@@ -80,4 +81,5 @@ PROMPT QUALITY STANDARDS:
 - Video prompts should be 60–120 words
 - Always include jewelry-specific details: metal type, stone cuts, finish, scale
 - Always include lighting specifics
-- Always include compositional guidance`;
+- Always include compositional guidance
+- CRITICAL: Every prompt MUST replicate the exact pose, camera angle, composition, and framing from the reference image. Start each prompt with the pose/composition description before describing the jewelry and lighting. The generated image should look like it was shot from the same camera position with the same styling.`;

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, RotateCcw, Save, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,6 +32,24 @@ export function AnalyzeTab() {
     analyze,
     reset,
   } = useAnalyze();
+
+  const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
+
+  // Upload reference image to Blob for use as generation reference
+  const uploadReferenceForGeneration = useCallback(async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('context', 'reference');
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const json = await res.json();
+      if (json.success) {
+        setReferenceImageUrl(json.url);
+      }
+    } catch {
+      // Non-critical — generation still works without reference URL
+    }
+  }, []);
 
   const handleSave = async () => {
     if (!result) return;
@@ -73,7 +92,12 @@ export function AnalyzeTab() {
       <div className="grid gap-6 md:grid-cols-2">
         <UploadZone
           label="Reference Image (required)"
-          onFilesChange={(files) => files[0] && setReference(files[0])}
+          onFilesChange={(files) => {
+            if (files[0]) {
+              setReference(files[0]);
+              uploadReferenceForGeneration(files[0]);
+            }
+          }}
           previews={referencePreview ? [referencePreview] : []}
           disabled={isLoading}
           onRemove={removeReference}
@@ -171,6 +195,7 @@ export function AnalyzeTab() {
                     platform={platform}
                     prompt={prompt!}
                     isRecommended={platform === result.recommendation.primary}
+                    referenceImageUrl={referenceImageUrl || undefined}
                   />
                 ))}
             </div>

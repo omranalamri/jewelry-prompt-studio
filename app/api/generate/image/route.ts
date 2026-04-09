@@ -10,7 +10,7 @@ function errorResponse(code: string, message: string, status: number) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, platform, aspectRatio, model: requestedModel } = await req.json();
+    const { prompt, platform, aspectRatio, model: requestedModel, referenceImageUrl } = await req.json();
 
     if (!prompt) {
       return errorResponse('MISSING_PROMPT', 'No prompt provided.', 400);
@@ -87,17 +87,31 @@ export async function POST(req: NextRequest) {
         let input: Record<string, unknown>;
 
         if (modelInfo.id === 'flux-ultra') {
-          input = { prompt: cleanPrompt, aspect_ratio: ar, raw: true, output_format: 'jpg' };
+          input = {
+            prompt: cleanPrompt,
+            aspect_ratio: ar,
+            raw: true,
+            output_format: 'jpg',
+            // Pass reference image for composition guidance (Flux Redux)
+            ...(referenceImageUrl && {
+              image_prompt: referenceImageUrl,
+              image_prompt_strength: 0.35, // blend: 35% reference composition, 65% prompt
+            }),
+          };
         } else if (modelInfo.id === 'ideogram-v2') {
           input = { prompt: cleanPrompt, aspect_ratio: ar };
         } else {
-          // Nano Banana 2 and Pro
+          // Nano Banana 2 and Pro — supports up to 14 reference images
           input = {
-            prompt: cleanPrompt,
+            prompt: referenceImageUrl
+              ? `Recreate the exact pose, composition, camera angle, and lighting setup from the reference image, but with: ${cleanPrompt}`
+              : cleanPrompt,
             resolution: modelInfo.id === 'nano-banana-pro' ? '2K' : '1K',
             aspect_ratio: ar,
             output_format: 'jpg',
             ...(modelInfo.id === 'nano-banana-pro' && { safety_filter_level: 'block_only_high' }),
+            // Pass reference image for pose/composition matching
+            ...(referenceImageUrl && { image_input: [referenceImageUrl] }),
           };
         }
 
