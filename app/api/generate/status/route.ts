@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import Replicate from 'replicate';
+import { getDb } from '@/lib/db';
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
@@ -43,6 +44,16 @@ export async function GET(req: NextRequest) {
 
       const resultUrl = data.output?.[0] || null;
 
+      // Auto-save completed videos to repository
+      if (status === 'completed' && resultUrl) {
+        try {
+          const sql = getDb();
+          await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata)
+            SELECT 'generated', ${'Runway Video — ' + new Date().toLocaleDateString()}, '', ${resultUrl}, ${'{"video","runway"}'}, '{}'
+            WHERE NOT EXISTS (SELECT 1 FROM repository WHERE image_url = ${resultUrl})`;
+        } catch { /* non-critical */ }
+      }
+
       return Response.json({
         success: true,
         data: { id: predictionId, status, resultUrl, error: data.failure || null },
@@ -74,6 +85,17 @@ export async function GET(req: NextRequest) {
         } else if (Array.isArray(prediction.output) && prediction.output.length > 0) {
           resultUrl = String(prediction.output[0]);
         }
+      }
+
+      // Auto-save completed videos to repository
+      if (status === 'completed' && resultUrl) {
+        try {
+          const sql = getDb();
+          const model = (prediction as unknown as Record<string, unknown>).model as string || 'video';
+          await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata)
+            SELECT 'generated', ${(model || 'Video') + ' — ' + new Date().toLocaleDateString()}, '', ${resultUrl}, ${['video', model || 'replicate']}, '{}'
+            WHERE NOT EXISTS (SELECT 1 FROM repository WHERE image_url = ${resultUrl})`;
+        } catch { /* non-critical */ }
       }
 
       return Response.json({

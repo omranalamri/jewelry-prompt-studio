@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FolderOpen, Plus, Trash2, Search, Tag, X, Upload, Gem, Palette, Camera, User, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { FolderOpen, Plus, Trash2, Search, Tag, X, Upload, Gem, Palette, Camera, User, Sparkles, Image as ImageIcon, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -254,9 +254,20 @@ export default function RepositoryPage() {
               <motion.div key={item.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: i * 0.03 }}>
                 <div className="group relative rounded-xl overflow-hidden border bg-card hover:shadow-md transition-all">
-                  <div className="aspect-square relative">
-                    <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                  <div className="aspect-square relative bg-black">
+                    {item.image_url.includes('.mp4') || item.tags?.includes('video') ? (
+                      <video src={item.image_url} muted loop className="w-full h-full object-cover"
+                        onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
+                        onMouseLeave={(e) => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }} />
+                    ) : (
+                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {(item.image_url.includes('.mp4') || item.tags?.includes('video')) && (
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/50 flex items-center justify-center opacity-60 group-hover:opacity-0 transition-opacity">
+                        <Play className="h-4 w-4 text-white ml-0.5" />
+                      </div>
+                    )}
 
                     {/* Overlay actions */}
                     <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
