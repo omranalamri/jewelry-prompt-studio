@@ -10,44 +10,52 @@ function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
 }
 
+interface ChatImage {
+  base64: string;
+  mediaType: string;
+}
+
+interface IncomingMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  rawJson?: string;
+  images?: ChatImage[];
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { messages, imageBase64, imageMediaType } = body;
+    const { messages } = body as { messages: IncomingMessage[] };
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    if (!messages || messages.length === 0) {
       return errorResponse('MISSING_INPUT', 'Please provide a message.', 400);
     }
 
-    // Build the message history for Claude
-    const formattedMessages: Anthropic.MessageParam[] = [];
-
-    for (const msg of messages) {
-      if (msg.role === 'user') {
-        // First user message might include an image
-        if (msg.hasImage && imageBase64 && imageMediaType && formattedMessages.length === 0) {
-          formattedMessages.push({
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: {
-                  type: 'base64',
-                  media_type: imageMediaType as 'image/jpeg',
-                  data: imageBase64,
-                },
-              },
-              { type: 'text', text: msg.content },
-            ],
-          });
-        } else {
-          formattedMessages.push({ role: 'user', content: msg.content });
-        }
-      } else {
-        // For assistant messages, send the original raw JSON so Claude has full context
-        formattedMessages.push({ role: 'assistant', content: msg.rawJson || msg.content });
+    // Build Claude messages — any user message can have images
+    const formatted: Anthropic.MessageParam[] = messages.map((msg) => {
+      if (msg.role === 'assistant') {
+        return { role: 'assistant' as const, content: msg.rawJson || msg.content };
       }
-    }
+
+      // User message — may have images
+      if (msg.images && msg.images.length > 0) {
+        const blocks: Anthropic.ContentBlockParam[] = [];
+        for (const img of msg.images) {
+          blocks.push({
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: img.mediaType as 'image/jpeg',
+              data: img.base64,
+            },
+          });
+        }
+        blocks.push({ type: 'text', text: msg.content || 'Analyze this image.' });
+        return { role: 'user' as const, content: blocks };
+      }
+
+      return { role: 'user' as const, content: msg.content };
+    });
 
     const anthropic = getAnthropicClient();
     const message = await callWithFallback((model) =>
@@ -55,7 +63,7 @@ export async function POST(req: NextRequest) {
         model,
         max_tokens: 4000,
         system: CREATIVE_DIRECTOR_CHAT_PROMPT,
-        messages: formattedMessages,
+        messages: formatted,
       })
     );
 
@@ -69,11 +77,7 @@ export async function POST(req: NextRequest) {
       return errorResponse('AI_PARSE_ERROR', 'Failed to parse response. Please try again.', 500);
     }
 
-    return Response.json({
-      success: true,
-      data,
-      rawJson: rawText,
-    });
+    return Response.json({ success: true, data, rawJson: rawText });
   } catch (error) {
     if (error instanceof Anthropic.APIError) {
       console.error('Creative chat error:', error.status, error.message);
