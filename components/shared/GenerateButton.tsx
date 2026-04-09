@@ -42,7 +42,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
   const [costInfo, setCostInfo] = useState<string | null>(null);
   const [timeInfo, setTimeInfo] = useState<number | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const [showModelPicker, setShowModelPicker] = useState(false);
+  const _showModelPicker = true; // always visible
 
   const isVideo = isVideoPlatform(platform);
   const modelOptions = isVideo ? VIDEO_MODEL_OPTIONS : IMAGE_MODEL_OPTIONS;
@@ -80,14 +80,14 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
     setState('generating');
     setError(null);
     setResultUrl(null);
-    setShowModelPicker(false);
+    // model picker always visible
 
     try {
       if (isVideo) {
         const res = await fetch('/api/generate/video', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, platform, duration: 5, aspectRatio: '16:9', referenceImageUrl, model: selectedModel }),
+          body: JSON.stringify({ prompt, platform, duration: 5, aspectRatio: '16:9', referenceImageUrl, model: selectedModel || modelOptions[0].id }),
         });
         const json = await res.json();
 
@@ -108,7 +108,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
         const res = await fetch('/api/generate/image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, platform, model: selectedModel, referenceImageUrl }),
+          body: JSON.stringify({ prompt, platform, model: selectedModel || modelOptions[0].id, referenceImageUrl }),
         });
         const json = await res.json();
 
@@ -163,73 +163,48 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
 
   return (
     <div className="space-y-3">
-      {/* Generate Button with Model Picker */}
+      {/* Model Picker + Generate Button */}
       {state === 'idle' && (
-        <div className="space-y-2">
-          {/* Model selector */}
-          <button
-            onClick={() => setShowModelPicker(!showModelPicker)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <span>Model: {selectedModel ? modelOptions.find(m => m.id === selectedModel)?.name : 'Auto (best available)'}</span>
-            <ChevronDown className={`h-3 w-3 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
-          </button>
-
-          <AnimatePresence>
-            {showModelPicker && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="grid grid-cols-2 gap-1.5 pb-2">
-                  <button
-                    onClick={() => setSelectedModel(null)}
-                    className={`text-xs px-3 py-2 rounded-lg border text-left transition-all ${!selectedModel ? 'border-gold bg-gold/5' : 'hover:border-gold/30'}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Auto</span>
-                      <span className="text-gold text-[10px]">Best</span>
-                    </div>
-                    <span className="text-muted-foreground text-[10px]">Highest quality first</span>
-                  </button>
-                  {modelOptions.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => setSelectedModel(m.id)}
-                      className={`text-xs px-3 py-2 rounded-lg border text-left transition-all ${selectedModel === m.id ? 'border-gold bg-gold/5' : 'hover:border-gold/30'}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{m.name}</span>
-                        <span className="text-muted-foreground text-[10px]">{m.cost}</span>
-                      </div>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-muted-foreground text-[10px]">{m.badge}</span>
-                        <span className="text-[10px]">{'★'.repeat(Math.min(m.quality - 7, 3))}</span>
-                      </div>
-                    </button>
+        <div className="space-y-3">
+          {/* Model selector — always visible */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {isVideo ? 'Video Model' : 'Image Model'}
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {modelOptions.map((m, i) => (
+                <button
+                  key={m.id}
+                  onClick={() => setSelectedModel(m.id)}
+                  className={`text-xs px-3 py-2.5 rounded-lg border text-left transition-all ${
+                    (selectedModel === m.id || (!selectedModel && i === 0))
+                      ? 'border-gold bg-gold/5 shadow-sm'
+                      : 'hover:border-gold/30 bg-card'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{m.name}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground">{m.cost}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-muted-foreground text-[10px]">{m.badge}</span>
+                    <span className="text-[10px] text-gold">{'★'.repeat(Math.min(m.quality - 7, 3))}</span>
+                  </div>
+                </button>
                   ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            </div>
+          </div>
 
           <Button
             onClick={handleGenerate}
-            className="w-full gold-gradient text-white border-0 hover:opacity-90 h-10 shadow-sm"
+            className="w-full gold-gradient text-white border-0 hover:opacity-90 h-11 shadow-sm text-sm"
           >
-            {isVideo ? (
-              <>
-                <Play className="h-4 w-4 mr-2" />
-                Generate Video
-              </>
-            ) : (
-              <>
-                <ImageIcon className="h-4 w-4 mr-2" />
-                Generate Image
-              </>
-            )}
+            {isVideo ? <Play className="h-4 w-4 mr-2" /> : <ImageIcon className="h-4 w-4 mr-2" />}
+            Generate with {
+              selectedModel
+                ? modelOptions.find(m => m.id === selectedModel)?.name
+                : modelOptions[0].name
+            }
           </Button>
         </div>
       )}

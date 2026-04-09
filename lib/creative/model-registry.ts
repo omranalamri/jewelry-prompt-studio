@@ -108,6 +108,20 @@ export const VIDEO_MODELS: ModelInfo[] = [
     avgTimeSeconds: 127,
   },
   {
+    id: 'runway',
+    replicateId: 'runway-gen3', // uses direct API, not Replicate
+    name: 'Runway Gen-3 Alpha',
+    provider: 'Runway',
+    type: 'video',
+    quality: 9,
+    speed: 8,
+    costEstimate: 0.25,
+    resolution: '720p',
+    description: 'Image-to-video with highest design fidelity — uses your actual Runway API',
+    badge: 'Design Accurate',
+    avgTimeSeconds: 30,
+  },
+  {
     id: 'veo-2',
     replicateId: 'google/veo-2',
     name: 'Google Veo 2',

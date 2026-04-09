@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import Replicate from 'replicate';
-import { VIDEO_MODELS, getVideoModel, formatCost } from '@/lib/creative/model-registry';
+import { getVideoModel, getBestVideoModel, formatCost } from '@/lib/creative/model-registry';
 
 export const maxDuration = 300;
 
@@ -8,6 +8,7 @@ function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
 }
 
+// Step 1: Generate a still frame so the video preserves the jewelry design
 async function generateStillFrame(
   replicate: Replicate,
   prompt: string,
@@ -29,54 +30,88 @@ async function generateStillFrame(
   }
 }
 
-async function generateWithRunway(
-  imageUrl: string,
-  prompt: string,
-  duration: number
-): Promise<{ id: string; provider: string } | null> {
+// Runway Gen-3 Alpha — actual API
+async function runWithRunway(imageUrl: string, prompt: string, duration: number) {
   const apiKey = process.env.RUNWAYML_API_SECRET;
-  if (!apiKey) return null;
+  if (!apiKey) throw new Error('RUNWAYML_API_SECRET not configured');
 
-  try {
-    // Runway Gen-3 Alpha Turbo — image-to-video
-    const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'X-Runway-Version': '2024-11-06',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gen3a_turbo',
-        promptImage: imageUrl,
-        promptText: prompt.slice(0, 512),
-        duration: duration <= 5 ? 5 : 10,
-      }),
-    });
+  const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'X-Runway-Version': '2024-11-06',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gen3a_turbo',
+      promptImage: imageUrl,
+      promptText: prompt.slice(0, 512),
+      duration: duration <= 5 ? 5 : 10,
+    }),
+  });
 
-    if (!response.ok) {
-      console.error('Runway error:', response.status, await response.text());
-      return null;
-    }
-
-    const data = await response.json();
-    return { id: data.id, provider: 'runway' };
-  } catch (e) {
-    console.error('Runway failed:', e);
-    return null;
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Runway API error ${response.status}: ${err}`);
   }
+
+  const data = await response.json();
+  return { id: data.id, provider: 'runway' as const };
+}
+
+// Replicate models (Veo 3, Veo 2, Minimax)
+async function runWithReplicate(
+  replicate: Replicate,
+  modelId: string,
+  replicateId: string,
+  prompt: string,
+  firstFrameUrl: string | null,
+  duration: number,
+  aspectRatio: string
+) {
+  let input: Record<string, unknown>;
+
+  if (modelId === 'veo-3') {
+    input = {
+      prompt,
+      duration,
+      aspect_ratio: aspectRatio,
+      resolution: '1080p',
+      generate_audio: true,
+      ...(firstFrameUrl && { image: firstFrameUrl }),
+    };
+  } else if (modelId === 'veo-2') {
+    input = {
+      prompt,
+      duration: Math.min(duration, 8),
+      aspect_ratio: aspectRatio,
+      ...(firstFrameUrl && { image: firstFrameUrl }),
+    };
+  } else {
+    // Minimax
+    input = {
+      prompt,
+      prompt_optimizer: true,
+      ...(firstFrameUrl && { first_frame_image: firstFrameUrl }),
+    };
+  }
+
+  const prediction = await replicate.predictions.create({
+    model: replicateId as `${string}/${string}`,
+    input,
+  });
+
+  return { id: prediction.id, provider: 'replicate' as const };
 }
 
 export async function POST(req: NextRequest) {
   try {
     const {
       prompt,
-      duration,
-      aspectRatio,
-      imageUrl: providedImageUrl,
+      duration = 5,
+      aspectRatio = '16:9',
       referenceImageUrl,
-      model: requestedModel,
-      platform,
+      model: requestedModelId,
     } = await req.json();
 
     if (!prompt) {
@@ -88,107 +123,63 @@ export async function POST(req: NextRequest) {
     }
 
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
-    const ar = aspectRatio || '16:9';
-    const dur = duration || 5;
 
-    // STEP 1: Get or generate a reference still frame
-    // This is critical — it ensures the jewelry design is correct in the video
-    let firstFrameUrl = providedImageUrl || referenceImageUrl || null;
+    // Determine which model to use — user's choice is FINAL, no silent switching
+    const modelInfo = requestedModelId
+      ? getVideoModel(requestedModelId)
+      : getBestVideoModel();
 
-    if (!firstFrameUrl) {
-      // Generate a still frame first with Nano Banana Pro
-      firstFrameUrl = await generateStillFrame(replicate, prompt, ar);
+    if (!modelInfo) {
+      return errorResponse('INVALID_MODEL', `Unknown model: ${requestedModelId}`, 400);
     }
 
-    // STEP 2: Route to the right video model
-    // Runway prompts → actual Runway Gen-3 (image-to-video, preserves design)
-    // Kling prompts → Veo 3 or Veo 2 (text-to-video with image guidance)
+    // Get or generate a reference still frame for design accuracy
+    let firstFrameUrl = referenceImageUrl || null;
+    const needsFrame = modelInfo.id === 'runway' || !firstFrameUrl;
 
-    if ((platform === 'runway' || requestedModel === 'runway') && firstFrameUrl) {
-      // Use ACTUAL Runway Gen-3 API — image-to-video preserves the jewelry design
-      const result = await generateWithRunway(firstFrameUrl, prompt, dur);
-      if (result) {
-        return Response.json({
-          success: true,
-          data: {
-            id: result.id,
-            provider: 'runway',
-            model: 'Runway Gen-3 Alpha Turbo',
-            status: 'processing',
-            cost: formatCost(0.25), // ~$0.05/sec, 5sec
-            costRaw: 0.25,
-            estimatedTime: 30,
-            resolution: '720p',
-            quality: 9,
-            firstFrameUrl,
-            note: 'Using actual Runway API with image-to-video for design accuracy',
-          },
-        });
-      }
+    if (needsFrame && !firstFrameUrl) {
+      firstFrameUrl = await generateStillFrame(replicate, prompt, aspectRatio);
     }
 
-    // For Kling/other video: use Veo 3 (with image input if available)
-    const selectedModel = requestedModel ? getVideoModel(requestedModel) : null;
-    const chain = selectedModel
-      ? [selectedModel, ...VIDEO_MODELS.filter(m => m.id !== selectedModel.id)]
-      : VIDEO_MODELS;
+    const frameCost = (!referenceImageUrl && firstFrameUrl) ? 0.13 : 0;
 
-    for (const modelInfo of chain) {
-      try {
-        let input: Record<string, unknown>;
+    try {
+      let result: { id: string; provider: 'runway' | 'replicate' };
 
-        if (modelInfo.id === 'veo-3') {
-          input = {
-            prompt,
-            duration: dur,
-            aspect_ratio: ar,
-            resolution: '1080p',
-            generate_audio: true,
-            ...(firstFrameUrl && { image: firstFrameUrl }),
-          };
-        } else if (modelInfo.id === 'veo-2') {
-          input = {
-            prompt,
-            duration: Math.min(dur, 8),
-            aspect_ratio: ar,
-            ...(firstFrameUrl && { image: firstFrameUrl }),
-          };
-        } else {
-          // Minimax — image-to-video
-          input = {
-            prompt,
-            prompt_optimizer: true,
-            ...(firstFrameUrl && { first_frame_image: firstFrameUrl }),
-          };
+      if (modelInfo.id === 'runway') {
+        // ACTUAL Runway Gen-3 API
+        if (!firstFrameUrl) {
+          return errorResponse('MISSING_FRAME', 'Could not generate still frame for Runway. Try uploading a reference image.', 500);
         }
-
-        const prediction = await replicate.predictions.create({
-          model: modelInfo.replicateId as `${string}/${string}`,
-          input,
-        });
-
-        return Response.json({
-          success: true,
-          data: {
-            id: prediction.id,
-            provider: modelInfo.id,
-            model: modelInfo.name,
-            status: 'processing',
-            cost: formatCost(modelInfo.costEstimate + (firstFrameUrl && !providedImageUrl ? 0.13 : 0)),
-            costRaw: modelInfo.costEstimate,
-            estimatedTime: modelInfo.avgTimeSeconds,
-            resolution: modelInfo.resolution,
-            quality: modelInfo.quality,
-            firstFrameUrl,
-          },
-        });
-      } catch (e) {
-        console.error(`${modelInfo.id} failed:`, e instanceof Error ? e.message.slice(0, 100) : e);
-        continue;
+        result = await runWithRunway(firstFrameUrl, prompt, duration);
+      } else {
+        // Replicate (Veo 3, Veo 2, Minimax)
+        result = await runWithReplicate(
+          replicate, modelInfo.id, modelInfo.replicateId,
+          prompt, firstFrameUrl, duration, aspectRatio
+        );
       }
-    }
 
-    return errorResponse('VIDEO_ERROR', 'All video models failed.', 500);
+      return Response.json({
+        success: true,
+        data: {
+          id: result.id,
+          provider: result.provider,
+          model: modelInfo.name,
+          modelId: modelInfo.id,
+          status: 'processing',
+          cost: formatCost(modelInfo.costEstimate + frameCost),
+          costRaw: modelInfo.costEstimate + frameCost,
+          estimatedTime: modelInfo.avgTimeSeconds,
+          resolution: modelInfo.resolution,
+          quality: modelInfo.quality,
+          firstFrameUrl,
+        },
+      });
+    } catch (e) {
+      console.error(`${modelInfo.name} failed:`, e instanceof Error ? e.message : e);
+      return errorResponse('VIDEO_ERROR', `${modelInfo.name} failed: ${e instanceof Error ? e.message.slice(0, 100) : 'Unknown error'}`, 500);
+    }
   } catch (error) {
     console.error('Video generation error:', error);
     return errorResponse('GENERATION_FAILED', 'Video generation failed.', 500);
