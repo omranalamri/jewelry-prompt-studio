@@ -7,9 +7,35 @@ function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
 }
 
+// Available image generation models
+const IMAGE_MODELS = {
+  'nano-banana-2': {
+    replicateId: 'google/nano-banana-2',
+    name: 'Nano Banana 2',
+    description: 'Google\'s fast image gen with character consistency & multi-image fusion',
+  },
+  'nano-banana-pro': {
+    replicateId: 'google/nano-banana-pro',
+    name: 'Nano Banana Pro',
+    description: 'Google\'s state-of-the-art image generation, 2K resolution',
+  },
+  'flux-ultra': {
+    replicateId: 'black-forest-labs/flux-1.1-pro-ultra',
+    name: 'Flux 1.1 Pro Ultra',
+    description: '4 megapixel images with raw realism mode',
+  },
+  'recraft-v3': {
+    replicateId: 'recraft-v3',
+    name: 'Recraft V3',
+    description: 'Excellent product photography',
+  },
+} as const;
+
+type ImageModelId = keyof typeof IMAGE_MODELS;
+
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, platform, aspectRatio, negativePrompt } = await req.json();
+    const { prompt, platform, aspectRatio, model: requestedModel } = await req.json();
 
     if (!prompt) {
       return errorResponse('MISSING_PROMPT', 'No prompt provided.', 400);
@@ -30,37 +56,33 @@ export async function POST(req: NextRequest) {
       .replace(/--no\s+.*/g, '')
       .trim();
 
-    // Parse aspect ratio from MJ prompt
     const arMatch = prompt.match(/--ar\s+(\d+:\d+)/);
     const ar = arMatch ? arMatch[1] : (aspectRatio || '1:1');
 
-    if (platform === 'dalle') {
-      // DALL-E prompts → Nano Banana Pro (Google's best, 2K resolution)
+    // Determine which model to use
+    // Priority: user-requested model > platform default
+    let modelId: ImageModelId;
+    if (requestedModel && requestedModel in IMAGE_MODELS) {
+      modelId = requestedModel as ImageModelId;
+    } else if (platform === 'dalle') {
+      modelId = 'nano-banana-pro'; // best for product photography
+    } else {
+      modelId = 'nano-banana-pro'; // default: Nano Banana Pro (2K, most reliable)
+    }
+
+    // Generate with selected model, with fallback chain
+    const modelChain: ImageModelId[] = [modelId];
+    // Add fallbacks — Pro first (most reliable), then 2, then Flux
+    if (modelId !== 'nano-banana-pro') modelChain.push('nano-banana-pro');
+    if (modelId !== 'nano-banana-2') modelChain.push('nano-banana-2');
+    if (modelId !== 'flux-ultra') modelChain.push('flux-ultra');
+
+    for (const mid of modelChain) {
       try {
-        const output = await replicate.run('google/nano-banana-pro', {
-          input: {
-            prompt: cleanPrompt,
-            resolution: '2K',
-            aspect_ratio: ar,
-            output_format: 'jpg',
-            safety_filter_level: 'block_only_high',
-          },
-        });
-        const resultUrl = Array.isArray(output) ? String(output[0]) : String(output);
-        return Response.json({
-          success: true,
-          data: {
-            id: crypto.randomUUID(),
-            provider: 'nano-banana-pro',
-            model: 'google/nano-banana-pro',
-            status: 'completed',
-            resultUrl,
-          },
-        });
-      } catch (e) {
-        console.error('Nano Banana Pro failed, trying Recraft:', e);
-        // Fallback to Recraft
-        if (process.env.RECRAFT_API_TOKEN) {
+        const modelConfig = IMAGE_MODELS[mid];
+
+        if (mid === 'recraft-v3' && process.env.RECRAFT_API_TOKEN) {
+          // Recraft uses its own API
           const response = await fetch('https://external.api.recraft.ai/v1/images/generations', {
             method: 'POST',
             headers: {
@@ -79,58 +101,49 @@ export async function POST(req: NextRequest) {
             if (imageUrl) {
               return Response.json({
                 success: true,
-                data: { id: crypto.randomUUID(), provider: 'recraft', model: 'recraft-v3', status: 'completed', resultUrl: imageUrl },
+                data: { id: crypto.randomUUID(), provider: mid, model: modelConfig.name, status: 'completed', resultUrl: imageUrl },
               });
             }
           }
+          continue;
         }
-        throw e;
+
+        // Replicate models
+        let input: Record<string, unknown>;
+
+        if (mid === 'flux-ultra') {
+          input = { prompt: cleanPrompt, aspect_ratio: ar, raw: true, output_format: 'jpg' };
+        } else {
+          // Nano Banana 2 and Pro
+          input = {
+            prompt: cleanPrompt,
+            resolution: mid === 'nano-banana-pro' ? '2K' : '1K',
+            aspect_ratio: ar,
+            output_format: 'jpg',
+            ...(mid === 'nano-banana-pro' && { safety_filter_level: 'block_only_high' }),
+          };
+        }
+
+        const output = await replicate.run(modelConfig.replicateId as `${string}/${string}`, { input });
+        const resultUrl = Array.isArray(output) ? String(output[0]) : String(output);
+
+        return Response.json({
+          success: true,
+          data: {
+            id: crypto.randomUUID(),
+            provider: mid,
+            model: modelConfig.name,
+            status: 'completed',
+            resultUrl,
+          },
+        });
+      } catch (e) {
+        console.error(`${mid} failed:`, e instanceof Error ? e.message.slice(0, 100) : e);
+        continue;
       }
     }
 
-    // Midjourney prompts → Flux 1.1 Pro Ultra (4MP, raw realism mode)
-    try {
-      const output = await replicate.run('black-forest-labs/flux-1.1-pro-ultra', {
-        input: {
-          prompt: cleanPrompt,
-          aspect_ratio: ar,
-          raw: true,
-          output_format: 'jpg',
-        },
-      });
-      const resultUrl = typeof output === 'string' ? output : String(output);
-      return Response.json({
-        success: true,
-        data: {
-          id: crypto.randomUUID(),
-          provider: 'flux-ultra',
-          model: 'black-forest-labs/flux-1.1-pro-ultra',
-          status: 'completed',
-          resultUrl,
-        },
-      });
-    } catch {
-      // Fallback: Nano Banana 2 (fast, great quality)
-      const output = await replicate.run('google/nano-banana-2', {
-        input: {
-          prompt: cleanPrompt,
-          resolution: '1K',
-          aspect_ratio: ar,
-          output_format: 'jpg',
-        },
-      });
-      const resultUrl = Array.isArray(output) ? String(output[0]) : String(output);
-      return Response.json({
-        success: true,
-        data: {
-          id: crypto.randomUUID(),
-          provider: 'nano-banana-2',
-          model: 'google/nano-banana-2',
-          status: 'completed',
-          resultUrl,
-        },
-      });
-    }
+    return errorResponse('GENERATION_FAILED', 'All image models failed. Please try again.', 500);
   } catch (error) {
     console.error('Image generation error:', error);
     return errorResponse('GENERATION_FAILED', 'Image generation failed. Please try again.', 500);

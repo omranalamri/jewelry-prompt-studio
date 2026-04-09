@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wand2, Loader2, Download, ExternalLink, Play, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { Wand2, Loader2, Download, ExternalLink, Play, Image as ImageIcon, RefreshCw, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PlatformId } from '@/types/platforms';
@@ -16,14 +16,30 @@ interface GenerateButtonProps {
 
 const isVideoPlatform = (p: PlatformId) => p === 'runway' || p === 'kling';
 
+const IMAGE_MODEL_OPTIONS = [
+  { id: 'nano-banana-2', name: 'Nano Banana 2', badge: 'Fast + Consistent' },
+  { id: 'nano-banana-pro', name: 'Nano Banana Pro', badge: '2K Best Quality' },
+  { id: 'flux-ultra', name: 'Flux Ultra', badge: '4MP Photorealism' },
+  { id: 'recraft-v3', name: 'Recraft V3', badge: 'Product Photography' },
+];
+
+const VIDEO_MODEL_OPTIONS = [
+  { id: 'veo-3', name: 'Google Veo 3', badge: 'With Audio' },
+  { id: 'veo-2', name: 'Google Veo 2', badge: 'Fast' },
+  { id: 'minimax', name: 'Minimax Video', badge: 'Image-to-Video' },
+];
+
 export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
   const [state, setState] = useState<GenerationState>('idle');
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modelUsed, setModelUsed] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [showModelPicker, setShowModelPicker] = useState(false);
 
   const isVideo = isVideoPlatform(platform);
+  const modelOptions = isVideo ? VIDEO_MODEL_OPTIONS : IMAGE_MODEL_OPTIONS;
 
   // Poll for video completion
   useEffect(() => {
@@ -41,7 +57,7 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
             clearInterval(interval);
           } else if (json.data.status === 'failed') {
             setState('failed');
-            setError('Video generation failed.');
+            setError(json.data.error || 'Video generation failed.');
             toast.error('Video generation failed.');
             clearInterval(interval);
           }
@@ -58,19 +74,14 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
     setState('generating');
     setError(null);
     setResultUrl(null);
+    setShowModelPicker(false);
 
     try {
       if (isVideo) {
-        // Video generation via Nano Banana
         const res = await fetch('/api/generate/video', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt,
-            platform,
-            duration: 5,
-            aspectRatio: '16:9',
-          }),
+          body: JSON.stringify({ prompt, platform, duration: 5, aspectRatio: '16:9' }),
         });
         const json = await res.json();
 
@@ -86,11 +97,10 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
         setState('polling');
         toast.info(`Generating video with ${json.data.model || 'AI'}... This may take a minute.`);
       } else {
-        // Image generation via Replicate/Recraft
         const res = await fetch('/api/generate/image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, platform }),
+          body: JSON.stringify({ prompt, platform, model: selectedModel }),
         });
         const json = await res.json();
 
@@ -104,14 +114,14 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
         setResultUrl(json.data.resultUrl);
         setModelUsed(json.data.model || json.data.provider);
         setState('completed');
-        toast.success(`Image generated with ${json.data.model || json.data.provider}!`);
+        toast.success(`Generated with ${json.data.model || json.data.provider}!`);
       }
     } catch {
       setState('failed');
       setError('Network error. Please try again.');
       toast.error('Generation failed.');
     }
-  }, [prompt, platform, isVideo]);
+  }, [prompt, platform, isVideo, selectedModel]);
 
   const handleDownload = useCallback(async () => {
     if (!resultUrl) return;
@@ -140,24 +150,66 @@ export function GenerateButton({ prompt, platform }: GenerateButtonProps) {
 
   return (
     <div className="space-y-3">
-      {/* Generate Button */}
+      {/* Generate Button with Model Picker */}
       {state === 'idle' && (
-        <Button
-          onClick={handleGenerate}
-          className="w-full gold-gradient text-white border-0 hover:opacity-90 h-10 shadow-sm"
-        >
-          {isVideo ? (
-            <>
-              <Play className="h-4 w-4 mr-2" />
-              Generate Video
-            </>
-          ) : (
-            <>
-              <ImageIcon className="h-4 w-4 mr-2" />
-              Generate Image
-            </>
-          )}
-        </Button>
+        <div className="space-y-2">
+          {/* Model selector */}
+          <button
+            onClick={() => setShowModelPicker(!showModelPicker)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <span>Model: {selectedModel ? modelOptions.find(m => m.id === selectedModel)?.name : 'Auto (best available)'}</span>
+            <ChevronDown className={`h-3 w-3 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
+          </button>
+
+          <AnimatePresence>
+            {showModelPicker && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-2 gap-1.5 pb-2">
+                  <button
+                    onClick={() => setSelectedModel(null)}
+                    className={`text-xs px-3 py-2 rounded-lg border text-left transition-all ${!selectedModel ? 'border-gold bg-gold/5' : 'hover:border-gold/30'}`}
+                  >
+                    <span className="font-medium block">Auto</span>
+                    <span className="text-muted-foreground text-[10px]">Best available</span>
+                  </button>
+                  {modelOptions.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setSelectedModel(m.id)}
+                      className={`text-xs px-3 py-2 rounded-lg border text-left transition-all ${selectedModel === m.id ? 'border-gold bg-gold/5' : 'hover:border-gold/30'}`}
+                    >
+                      <span className="font-medium block">{m.name}</span>
+                      <span className="text-muted-foreground text-[10px]">{m.badge}</span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <Button
+            onClick={handleGenerate}
+            className="w-full gold-gradient text-white border-0 hover:opacity-90 h-10 shadow-sm"
+          >
+            {isVideo ? (
+              <>
+                <Play className="h-4 w-4 mr-2" />
+                Generate Video
+              </>
+            ) : (
+              <>
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Generate Image
+              </>
+            )}
+          </Button>
+        </div>
       )}
 
       {/* Loading State */}
