@@ -100,10 +100,12 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
 
         setVideoId(json.data.id);
         setVideoProvider(json.data.provider === 'runway' ? 'runway' : 'replicate');
-        setModelUsed(json.data.model || json.data.provider);
+        setModelUsed(json.data.model);
         setCostInfo(json.data.cost || null);
         setState('polling');
-        toast.info(`Generating video with ${json.data.model || 'AI'} (${json.data.cost || ''})... ~${Math.round((json.data.estimatedTime || 60) / 60)}min`);
+
+        const fallbackNote = json.data.wasFirstChoice === false ? ` (${json.data.model} used instead)` : '';
+        toast.info(`Generating with ${json.data.model}${fallbackNote} ${json.data.cost || ''}...`);
       } else {
         const res = await fetch('/api/generate/image', {
           method: 'POST',
@@ -120,11 +122,18 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
         }
 
         setResultUrl(json.data.resultUrl);
-        setModelUsed(json.data.model || json.data.provider);
+        setModelUsed(json.data.model);
         setCostInfo(json.data.cost || null);
         setTimeInfo(json.data.timeSeconds || null);
         setState('completed');
-        toast.success(`Generated with ${json.data.model} (${json.data.cost}, ${json.data.timeSeconds}s)`);
+
+        if (json.data.wasFirstChoice === false) {
+          toast.success(`Generated with ${json.data.model} (${json.data.cost}, ${json.data.timeSeconds}s)`, {
+            description: `Your selected model was busy, used ${json.data.model} instead`,
+          });
+        } else {
+          toast.success(`Generated with ${json.data.model} (${json.data.cost}, ${json.data.timeSeconds}s)`);
+        }
       }
     } catch {
       setState('failed');
