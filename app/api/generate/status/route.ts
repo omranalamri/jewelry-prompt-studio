@@ -15,6 +15,41 @@ export async function GET(req: NextRequest) {
       return errorResponse('MISSING_ID', 'No prediction ID provided.', 400);
     }
 
+    // Runway task polling
+    if (provider === 'runway') {
+      const apiKey = process.env.RUNWAYML_API_SECRET;
+      if (!apiKey) return errorResponse('NOT_CONFIGURED', 'Runway not configured.', 503);
+
+      const response = await fetch(`https://api.dev.runwayml.com/v1/tasks/${predictionId}`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'X-Runway-Version': '2024-11-06',
+        },
+      });
+
+      if (!response.ok) {
+        return errorResponse('STATUS_ERROR', 'Could not check Runway status.', 500);
+      }
+
+      const data = await response.json();
+
+      let status: string;
+      switch (data.status) {
+        case 'SUCCEEDED': status = 'completed'; break;
+        case 'FAILED': status = 'failed'; break;
+        case 'RUNNING': status = 'processing'; break;
+        default: status = 'queued';
+      }
+
+      const resultUrl = data.output?.[0] || null;
+
+      return Response.json({
+        success: true,
+        data: { id: predictionId, status, resultUrl, error: data.failure || null },
+      });
+    }
+
+    // Replicate prediction polling
     if (provider === 'replicate') {
       if (!process.env.REPLICATE_API_TOKEN) {
         return errorResponse('NOT_CONFIGURED', 'Replicate not configured.', 503);
@@ -25,21 +60,13 @@ export async function GET(req: NextRequest) {
 
       let status: string;
       switch (prediction.status) {
-        case 'succeeded':
-          status = 'completed';
-          break;
+        case 'succeeded': status = 'completed'; break;
         case 'failed':
-        case 'canceled':
-          status = 'failed';
-          break;
-        case 'processing':
-          status = 'processing';
-          break;
-        default:
-          status = 'queued';
+        case 'canceled': status = 'failed'; break;
+        case 'processing': status = 'processing'; break;
+        default: status = 'queued';
       }
 
-      // Output can be a string URL or array of URLs
       let resultUrl: string | null = null;
       if (prediction.output) {
         if (typeof prediction.output === 'string') {
@@ -51,12 +78,7 @@ export async function GET(req: NextRequest) {
 
       return Response.json({
         success: true,
-        data: {
-          id: predictionId,
-          status,
-          resultUrl,
-          error: prediction.error || null,
-        },
+        data: { id: predictionId, status, resultUrl, error: prediction.error || null },
       });
     }
 

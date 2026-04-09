@@ -27,6 +27,7 @@ const IMAGE_MODEL_OPTIONS = [
 
 const VIDEO_MODEL_OPTIONS = [
   { id: 'veo-3', name: 'Google Veo 3', badge: 'Best + Audio', cost: '$1.25', quality: 10 },
+  { id: 'runway', name: 'Runway Gen-3', badge: 'Design Accurate', cost: '$0.25', quality: 9 },
   { id: 'veo-2', name: 'Google Veo 2', badge: 'Fast + Quality', cost: '$0.50', quality: 9 },
   { id: 'minimax', name: 'Minimax Video', badge: 'Image-to-Video', cost: '$0.88', quality: 7 },
 ];
@@ -35,6 +36,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
   const [state, setState] = useState<GenerationState>('idle');
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
+  const [videoProvider, setVideoProvider] = useState<string>('replicate');
   const [error, setError] = useState<string | null>(null);
   const [modelUsed, setModelUsed] = useState<string | null>(null);
   const [costInfo, setCostInfo] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/generate/status?id=${videoId}&provider=replicate`);
+        const res = await fetch(`/api/generate/status?id=${videoId}&provider=${videoProvider}`);
         const json = await res.json();
         if (json.success) {
           if (json.data.status === 'completed' && json.data.resultUrl) {
@@ -72,7 +74,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [state, videoId]);
+  }, [state, videoId, videoProvider]);
 
   const handleGenerate = useCallback(async () => {
     setState('generating');
@@ -85,7 +87,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
         const res = await fetch('/api/generate/video', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, platform, duration: 5, aspectRatio: '16:9' }),
+          body: JSON.stringify({ prompt, platform, duration: 5, aspectRatio: '16:9', referenceImageUrl, model: selectedModel }),
         });
         const json = await res.json();
 
@@ -97,6 +99,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
         }
 
         setVideoId(json.data.id);
+        setVideoProvider(json.data.provider === 'runway' ? 'runway' : 'replicate');
         setModelUsed(json.data.model || json.data.provider);
         setCostInfo(json.data.cost || null);
         setState('polling');
@@ -152,6 +155,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
     setError(null);
     setResultUrl(null);
     setVideoId(null);
+    setVideoProvider('replicate');
     setModelUsed(null);
     setCostInfo(null);
     setTimeInfo(null);
