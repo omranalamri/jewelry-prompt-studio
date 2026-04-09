@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { uploadToS3 } from '@/lib/s3';
+import { put } from '@vercel/blob';
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
@@ -23,15 +23,13 @@ export async function POST(req: NextRequest) {
       return errorResponse('FILE_TOO_LARGE', 'Image must be under 10MB.', 400);
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const ext = file.name.split('.').pop() || 'jpg';
-    const key = `${context}/${crypto.randomUUID()}.${ext}`;
+    const blob = await put(`${context}/${crypto.randomUUID()}-${file.name}`, file, {
+      access: 'public',
+    });
 
-    const url = await uploadToS3(buffer, key, file.type);
-
-    return Response.json({ success: true, url, key });
+    return Response.json({ success: true, url: blob.url });
   } catch (error) {
     console.error('Upload error:', error);
-    return errorResponse('UPLOAD_FAILED', 'Could not save your image. The prompts are still available to copy.', 500);
+    return errorResponse('UPLOAD_FAILED', 'Could not save your image.', 500);
   }
 }

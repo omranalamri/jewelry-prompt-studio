@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { getDb } from '@/lib/db';
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
@@ -11,17 +11,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = createServerSupabaseClient();
+    const sql = getDb();
 
-    const { error } = await supabase
-      .from('sessions')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('History delete error:', error);
-      return errorResponse('DB_ERROR', 'Could not delete entry.', 500);
-    }
+    await sql`DELETE FROM sessions WHERE id = ${id}`;
 
     return Response.json({ success: true });
   } catch (error) {

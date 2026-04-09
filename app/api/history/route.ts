@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { getDb } from '@/lib/db';
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
@@ -11,33 +11,45 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const module = searchParams.get('module');
+    const offset = (page - 1) * limit;
 
-    const supabase = createServerSupabaseClient();
-    let query = supabase
-      .from('sessions')
-      .select('*', { count: 'exact' })
-      .eq('is_saved', true)
-      .order('created_at', { ascending: false })
-      .range((page - 1) * limit, page * limit - 1);
+    const sql = getDb();
+
+    let data;
+    let countResult;
 
     if (module) {
-      query = query.eq('module', module);
+      data = await sql`
+        SELECT * FROM sessions
+        WHERE is_saved = true AND module = ${module}
+        ORDER BY created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      countResult = await sql`
+        SELECT COUNT(*) as total FROM sessions
+        WHERE is_saved = true AND module = ${module}
+      `;
+    } else {
+      data = await sql`
+        SELECT * FROM sessions
+        WHERE is_saved = true
+        ORDER BY created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      countResult = await sql`
+        SELECT COUNT(*) as total FROM sessions WHERE is_saved = true
+      `;
     }
 
-    const { data, count, error } = await query;
-
-    if (error) {
-      console.error('History fetch error:', error);
-      return errorResponse('DB_ERROR', 'Could not load history.', 500);
-    }
+    const total = parseInt(countResult[0].total as string);
 
     return Response.json({
       success: true,
-      data: data || [],
+      data,
       pagination: {
         page,
-        total: count || 0,
-        hasMore: (count || 0) > page * limit,
+        total,
+        hasMore: total > page * limit,
       },
     });
   } catch (error) {
@@ -49,29 +61,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { module, title, inputContext, outputType, imageUrls, result } = body;
+    const { module, title, inputContext, outputType, result } = body;
 
-    const supabase = createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from('sessions')
-      .insert({
-        module,
-        title,
-        input_context: inputContext,
-        output_type: outputType,
-        image_urls: imageUrls || [],
-        result,
-        is_saved: true,
-      })
-      .select()
-      .single();
+    const sql = getDb();
+    const data = await sql`
+      INSERT INTO sessions (module, title, input_context, output_type, result, is_saved)
+      VALUES (${module}, ${title}, ${inputContext}, ${outputType || null}, ${JSON.stringify(result)}, true)
+      RETURNING *
+    `;
 
-    if (error) {
-      console.error('History save error:', error);
-      return errorResponse('DB_ERROR', 'Could not save to history.', 500);
-    }
-
-    return Response.json({ success: true, data });
+    return Response.json({ success: true, data: data[0] });
   } catch (error) {
     console.error('History save error:', error);
     return errorResponse('UNKNOWN', 'An unexpected error occurred.', 500);
