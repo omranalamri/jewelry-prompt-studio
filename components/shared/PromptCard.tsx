@@ -5,8 +5,10 @@ import { Sparkles, Download } from 'lucide-react';
 import { PlatformId } from '@/types/platforms';
 import { PlatformBadge } from './PlatformBadge';
 import { CopyButton } from './CopyButton';
+import { GenerateButton } from './GenerateButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
 interface PromptCardProps {
@@ -14,9 +16,10 @@ interface PromptCardProps {
   prompt: string;
   isRecommended?: boolean;
   onSave?: () => void;
+  showGenerate?: boolean;
 }
 
-export function PromptCard({ platform, prompt, isRecommended, onSave }: PromptCardProps) {
+export function PromptCard({ platform, prompt, isRecommended, onSave, showGenerate = true }: PromptCardProps) {
   const handleExport = () => {
     const blob = new Blob([prompt], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -55,13 +58,13 @@ export function PromptCard({ platform, prompt, isRecommended, onSave }: PromptCa
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="relative group">
             <pre className="whitespace-pre-wrap text-sm font-mono bg-muted/50 p-5 rounded-xl leading-relaxed border">
               {prompt}
             </pre>
           </div>
-          <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
               {prompt.split(/\s+/).length} words
             </span>
@@ -71,6 +74,13 @@ export function PromptCard({ platform, prompt, isRecommended, onSave }: PromptCa
               </Button>
             )}
           </div>
+
+          {showGenerate && (
+            <>
+              <Separator />
+              <GenerateButton prompt={prompt} platform={platform} />
+            </>
+          )}
         </CardContent>
       </Card>
     </motion.div>
