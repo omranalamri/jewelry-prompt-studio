@@ -30,6 +30,18 @@ export async function GET(req: NextRequest) {
       await fetch(`${baseUrl}/api/learn`, { method: 'POST' });
     } catch { /* non-critical */ }
 
+    // Run the research agent scan
+    let researchCount = 0;
+    try {
+      const researchRes = await fetch(`${baseUrl}/api/research-agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: 'full' }),
+      });
+      const researchData = await researchRes.json();
+      researchCount = researchData?.data?.count || 0;
+    } catch { /* non-critical */ }
+
     return Response.json({
       success: true,
       data: {
