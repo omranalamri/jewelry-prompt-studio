@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FolderOpen, Plus, Trash2, Search, Tag, X, Upload, Gem, Palette, Camera, User, Sparkles, Image as ImageIcon, Play } from 'lucide-react';
+import { FolderOpen, Plus, Trash2, Search, Tag, X, Upload, Gem, Palette, Camera, User, Sparkles, Image as ImageIcon, Play, Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +31,7 @@ const CATEGORIES = [
 export default function RepositoryPage() {
   const [items, setItems] = useState<RepoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<RepoItem | null>(null);
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [showUpload, setShowUpload] = useState(false);
@@ -253,7 +254,8 @@ export default function RepositoryPage() {
             {items.map((item, i) => (
               <motion.div key={item.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: i * 0.03 }}>
-                <div className="group relative rounded-xl overflow-hidden border bg-card hover:shadow-md transition-all">
+                <div className="group relative rounded-xl overflow-hidden border bg-card hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => setSelectedItem(item)}>
                   <div className="aspect-square relative bg-black">
                     {item.image_url.includes('.mp4') || item.tags?.includes('video') ? (
                       <video src={item.image_url} muted loop className="w-full h-full object-cover"
@@ -303,6 +305,84 @@ export default function RepositoryPage() {
           </AnimatePresence>
         </div>
       )}
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {selectedItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setSelectedItem(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-4xl w-full max-h-[90vh] flex flex-col bg-card rounded-2xl overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button onClick={() => setSelectedItem(null)}
+                className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+
+              {/* Image/Video */}
+              <div className="flex-1 bg-black flex items-center justify-center min-h-0">
+                {selectedItem.image_url.includes('.mp4') || selectedItem.tags?.includes('video') ? (
+                  <video src={selectedItem.image_url} controls autoPlay loop className="max-w-full max-h-[70vh] object-contain" />
+                ) : (
+                  <img src={selectedItem.image_url} alt={selectedItem.title} className="max-w-full max-h-[70vh] object-contain" />
+                )}
+              </div>
+
+              {/* Info bar */}
+              <div className="p-4 border-t space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-sm">{selectedItem.title}</h3>
+                    {selectedItem.description && (
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{selectedItem.description}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => window.open(selectedItem.image_url, '_blank')}
+                      className="h-8 w-8 rounded-lg border flex items-center justify-center hover:bg-accent transition-colors">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => {
+                      const a = document.createElement('a');
+                      a.href = selectedItem.image_url;
+                      a.download = selectedItem.title + '.jpg';
+                      a.click();
+                    }}
+                      className="h-8 w-8 rounded-lg border flex items-center justify-center hover:bg-accent transition-colors">
+                      <Download className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => { handleDelete(selectedItem.id); setSelectedItem(null); }}
+                      className="h-8 w-8 rounded-lg border flex items-center justify-center hover:bg-destructive hover:text-white transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                {selectedItem.tags && selectedItem.tags.length > 0 && (
+                  <div className="flex gap-1 flex-wrap">
+                    {selectedItem.tags.map((tag) => (
+                      <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  {new Date(selectedItem.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {' · '}
+                  {CATEGORIES.find(c => c.id === selectedItem.category)?.label || selectedItem.category}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
