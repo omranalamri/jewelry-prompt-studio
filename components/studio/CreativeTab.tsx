@@ -58,14 +58,9 @@ interface CreativeResult {
   };
 }
 
-// --- Example starters ---
+// --- Campaign templates as starters ---
 
-const EXAMPLES = [
-  { text: 'Create an Instagram Reels campaign for a diamond engagement ring', icon: '💍' },
-  { text: 'I need a TikTok video ad for our new rose gold collection', icon: '📱' },
-  { text: 'Design a luxury editorial shoot for pearl earrings', icon: '✨' },
-  { text: 'Build a product page hero for a tennis bracelet', icon: '📸' },
-];
+import { CAMPAIGN_TEMPLATES, TEMPLATE_CATEGORIES } from '@/lib/creative/campaign-templates';
 
 const PHASE_LABELS: Record<string, string> = {
   analyze: 'Analyzing your piece',
@@ -84,6 +79,7 @@ export function CreativeTab() {
   const [currentPhase, setCurrentPhase] = useState<string | null>(null);
   const [creative, setCreative] = useState<CreativeResult | null>(null);
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
+  const [templateCat, setTemplateCat] = useState('all');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -251,26 +247,48 @@ export function CreativeTab() {
         </div>
       </div>
 
-      {/* Example starters — only when empty */}
+      {/* Campaign templates — only when empty */}
       {messages.length === 0 && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <p className="text-sm text-muted-foreground">Try one of these or type your own:</p>
-          <div className="grid sm:grid-cols-2 gap-2">
-            {EXAMPLES.map((ex, i) => (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">Campaign Templates</p>
+            <p className="text-xs text-muted-foreground">or type your own idea below</p>
+          </div>
+
+          {/* Category filter */}
+          <div className="flex gap-1.5 flex-wrap">
+            {TEMPLATE_CATEGORIES.map(cat => (
+              <button key={cat.id}
+                onClick={() => setTemplateCat(cat.id)}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
+                  templateCat === cat.id ? 'gold-gradient text-white border-transparent' : 'hover:border-gold/30'
+                }`}>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
+            {CAMPAIGN_TEMPLATES
+              .filter(t => templateCat === 'all' || t.category === templateCat)
+              .map((t) => (
               <motion.button
-                key={i}
+                key={t.id}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                onClick={() => sendMessage(ex.text)}
-                className="p-4 rounded-xl border bg-card hover:border-gold/30 hover:bg-gold/5 text-left transition-all"
+                onClick={() => sendMessage(t.prompt)}
+                className="p-3 rounded-xl border bg-card hover:border-gold/30 hover:bg-gold/5 text-left transition-all"
               >
-                <span className="text-lg mr-2">{ex.icon}</span>
-                <span className="text-sm">{ex.text}</span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-base">{t.icon}</span>
+                  <span className="text-sm font-medium">{t.name}</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{t.description}</p>
               </motion.button>
             ))}
           </div>
           <p className="text-xs text-muted-foreground text-center">
-            You can also paste or drop images directly into the chat at any time
+            Paste or drop images directly into the chat at any time
           </p>
         </motion.div>
       )}
