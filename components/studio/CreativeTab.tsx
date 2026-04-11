@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, Fragment } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Clapperboard, Send, RotateCcw, ImagePlus, Sparkles, Play,
@@ -61,6 +62,22 @@ interface CreativeResult {
 // --- Campaign templates as starters ---
 
 import { CAMPAIGN_TEMPLATES, TEMPLATE_CATEGORIES } from '@/lib/creative/campaign-templates';
+
+function fmtInline(text: string): React.ReactNode {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((p, i) => p.startsWith('**') && p.endsWith('**')
+    ? <strong key={i} className="font-semibold">{p.slice(2, -2)}</strong> : <Fragment key={i}>{p}</Fragment>);
+}
+function FmtMsg({ text, isUser }: { text: string; isUser: boolean }) {
+  if (isUser) return <>{text}</>;
+  return (<div className="space-y-2">{text.split('\n\n').filter(Boolean).map((para, i) => {
+    const lines = para.split('\n');
+    if (lines.every(l => /^[-•]\s/.test(l.trim()) || !l.trim()) && lines.filter(l => l.trim()).length > 1)
+      return <ul key={i} className="space-y-1">{lines.filter(l => l.trim()).map((l, j) => <li key={j} className="flex gap-2"><span className="text-gold shrink-0">•</span><span>{fmtInline(l.replace(/^[-•]\s*/, ''))}</span></li>)}</ul>;
+    if (lines.every(l => /^\d+[\.\)]\s/.test(l.trim()) || !l.trim()) && lines.filter(l => l.trim()).length > 1)
+      return <ol key={i} className="space-y-1">{lines.filter(l => l.trim()).map((l, j) => <li key={j} className="flex gap-2"><span className="text-gold shrink-0 font-medium">{j+1}.</span><span>{fmtInline(l.replace(/^\d+[\.\)]\s*/, ''))}</span></li>)}</ol>;
+    return <p key={i}>{fmtInline(para.replace(/\n/g, ' '))}</p>;
+  })}</div>);
+}
 
 const PHASE_LABELS: Record<string, string> = {
   analyze: 'Analyzing your piece',
@@ -324,7 +341,7 @@ export function CreativeTab() {
                         ))}
                       </div>
                     )}
-                    {msg.content}
+                    <FmtMsg text={msg.content} isUser={msg.role === 'user'} />
                     {msg.phase && msg.role === 'assistant' && (
                       <span className="block text-[10px] mt-2 opacity-50">{PHASE_LABELS[msg.phase]}</span>
                     )}

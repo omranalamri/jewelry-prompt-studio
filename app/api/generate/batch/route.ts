@@ -3,6 +3,8 @@ import Replicate from 'replicate';
 import { IMAGE_MODELS, formatCost } from '@/lib/creative/model-registry';
 import { logCost } from '@/lib/cost-tracker';
 import { getDb } from '@/lib/db';
+import { trackGeneration } from '@/lib/learning/generation-tracker';
+import { validatePrompt } from '@/lib/jewelry/validation';
 
 export const maxDuration = 300;
 
@@ -18,8 +20,12 @@ export async function POST(req: NextRequest) {
     if (!process.env.REPLICATE_API_TOKEN) return errorResponse('NOT_CONFIGURED', 'Not configured.', 503);
 
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
-    const cleanPrompt = prompt.replace(/--ar\s+\S+/g, '').replace(/--style\s+\S+/g, '')
+    let cleanPrompt = prompt.replace(/--ar\s+\S+/g, '').replace(/--style\s+\S+/g, '')
       .replace(/--v\s+\S+/g, '').replace(/--q\s+\S+/g, '').replace(/--no\s+.*/g, '').trim();
+
+    // Anti-hallucination validation
+    const validation = validatePrompt(cleanPrompt);
+    if (validation.correctionCount > 0) cleanPrompt = validation.correctedPrompt;
 
     const arMatch = prompt.match(/--ar\s+(\d+:\d+)/);
     const ar = arMatch ? arMatch[1] : aspectRatio;
@@ -67,12 +73,13 @@ export async function POST(req: NextRequest) {
           }
 
           logCost({ model: modelInfo.name, type: 'image', cost: modelInfo.costEstimate, promptPreview: cleanPrompt, resultUrl });
+          trackGeneration({ promptText: cleanPrompt, generationModel: modelInfo.id, generationType: 'image', referenceImageUrl, resultUrl, cost: modelInfo.costEstimate });
 
-          // Auto-save
+          // Auto-save with lineage
           try {
             const sql = getDb();
-            await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata)
-              VALUES ('generated', ${'Batch — ' + modelInfo.name}, ${cleanPrompt.slice(0, 200)}, ${resultUrl}, ${['batch', modelInfo.id]}, '{}')`;
+            await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata, prompt_text, model_used, reference_url)
+              VALUES ('generated', ${'Batch — ' + modelInfo.name}, ${cleanPrompt.slice(0, 200)}, ${resultUrl}, ${['batch', modelInfo.id]}, '{}', ${cleanPrompt}, ${modelInfo.name}, ${referenceImageUrl || null})`;
           } catch { /* */ }
 
           return { model: modelInfo.name, modelId: modelInfo.id, resultUrl, cost: modelInfo.costEstimate, quality: modelInfo.quality };

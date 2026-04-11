@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, Fragment } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, Send, RotateCcw, ImagePlus, Sparkles, X, Info } from 'lucide-react';
 import { toast } from 'sonner';
@@ -32,6 +33,32 @@ interface AnalyzeResult {
   prompts: Record<string, string | null>;
   tips: string[];
   warnings?: string[];
+}
+
+function formatInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => part.startsWith('**') && part.endsWith('**')
+    ? <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>
+    : <Fragment key={i}>{part}</Fragment>);
+}
+
+function FormatMsg({ text, isUser }: { text: string; isUser: boolean }) {
+  if (isUser) return <>{text}</>;
+  const paragraphs = text.split('\n\n').filter(Boolean);
+  return (
+    <div className="space-y-2">
+      {paragraphs.map((para, i) => {
+        const lines = para.split('\n');
+        const isList = lines.every(l => /^[-•]\s/.test(l.trim()) || l.trim() === '');
+        const isNum = lines.every(l => /^\d+[\.\)]\s/.test(l.trim()) || l.trim() === '');
+        if (isList && lines.filter(l => l.trim()).length > 1)
+          return <ul key={i} className="space-y-1">{lines.filter(l => l.trim()).map((l, j) => <li key={j} className="flex gap-2"><span className="text-gold shrink-0">•</span><span>{formatInline(l.replace(/^[-•]\s*/, ''))}</span></li>)}</ul>;
+        if (isNum && lines.filter(l => l.trim()).length > 1)
+          return <ol key={i} className="space-y-1">{lines.filter(l => l.trim()).map((l, j) => <li key={j} className="flex gap-2"><span className="text-gold shrink-0 font-medium">{j + 1}.</span><span>{formatInline(l.replace(/^\d+[\.\)]\s*/, ''))}</span></li>)}</ol>;
+        return <p key={i}>{formatInline(para.replace(/\n/g, ' '))}</p>;
+      })}
+    </div>
+  );
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -84,7 +111,16 @@ export function AnalyzeTab() {
           fd.append('context', 'analyze-ref');
           const res = await fetch('/api/upload', { method: 'POST', body: fd });
           const json = await res.json();
-          if (json.success) setReferenceImageUrl(json.url);
+          if (json.success) {
+            setReferenceImageUrl(json.url);
+            // Auto background removal for cleaner generation
+            fetch('/api/remove-bg', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ imageUrl: json.url }),
+            }).then(r => r.json()).then(bgJson => {
+              if (bgJson.success && bgJson.data?.resultUrl) setReferenceImageUrl(bgJson.data.resultUrl);
+            }).catch(() => {});
+          }
         } catch { /* non-critical */ }
       }
     }
@@ -316,7 +352,7 @@ export function AnalyzeTab() {
                         ))}
                       </div>
                     )}
-                    {msg.content}
+                    <FormatMsg text={msg.content} isUser={msg.role === 'user'} />
                     {msg.phase && msg.role === 'assistant' && (
                       <span className="block text-[10px] mt-2 opacity-50">{PHASE_LABELS[msg.phase]}</span>
                     )}

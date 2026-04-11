@@ -4,6 +4,7 @@ import { VIDEO_MODELS, getVideoModel, getBestVideoModel, formatCost, ModelInfo }
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
 import { trackGeneration } from '@/lib/learning/generation-tracker';
+import { validatePrompt } from '@/lib/jewelry/validation';
 
 export const maxDuration = 300;
 
@@ -103,6 +104,13 @@ export async function POST(req: NextRequest) {
     if (!prompt) return errorResponse('MISSING_PROMPT', 'No prompt provided.', 400);
     if (!process.env.REPLICATE_API_TOKEN) return errorResponse('NOT_CONFIGURED', 'Video generation not configured.', 503);
 
+    // Anti-hallucination validation on video prompts too
+    let validatedPrompt = prompt;
+    const validation = validatePrompt(prompt);
+    if (validation.correctionCount > 0) {
+      validatedPrompt = validation.correctedPrompt;
+    }
+
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
     // ================================================================
@@ -115,7 +123,7 @@ export async function POST(req: NextRequest) {
     // 2. Animate that new creative frame into video
     // ================================================================
 
-    const firstFrameUrl = await generateCreativeFrame(replicate, prompt, aspectRatio, referenceImageUrl || undefined);
+    const firstFrameUrl = await generateCreativeFrame(replicate, validatedPrompt, aspectRatio, referenceImageUrl || undefined);
     const frameCost = 0.13; // Nano Banana Pro cost for frame
 
     if (!firstFrameUrl) {
@@ -140,9 +148,9 @@ export async function POST(req: NextRequest) {
         let result: { id: string; provider: 'runway' | 'replicate' };
 
         if (modelInfo.id === 'runway') {
-          result = await runWithRunway(firstFrameUrl, prompt, duration);
+          result = await runWithRunway(firstFrameUrl, validatedPrompt, duration);
         } else {
-          result = await runWithReplicate(replicate, modelInfo, prompt, firstFrameUrl, duration, aspectRatio);
+          result = await runWithReplicate(replicate, modelInfo, validatedPrompt, firstFrameUrl, duration, aspectRatio);
         }
 
         return Response.json({

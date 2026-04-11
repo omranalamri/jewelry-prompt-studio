@@ -48,8 +48,8 @@ export async function GET(req: NextRequest) {
       if (status === 'completed' && resultUrl) {
         try {
           const sql = getDb();
-          await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata)
-            SELECT 'generated', ${'Runway Video — ' + new Date().toLocaleDateString()}, '', ${resultUrl}, ${['video', 'runway']}, '{}'
+          await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata, model_used)
+            SELECT 'generated', ${'Runway Video — ' + new Date().toLocaleDateString()}, '', ${resultUrl}, ${['video', 'runway']}, '{}', 'Runway Gen-3'
             WHERE NOT EXISTS (SELECT 1 FROM repository WHERE image_url = ${resultUrl})`;
         } catch { /* non-critical */ }
       }
@@ -92,8 +92,8 @@ export async function GET(req: NextRequest) {
         try {
           const sql = getDb();
           const model = (prediction as unknown as Record<string, unknown>).model as string || 'video';
-          await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata)
-            SELECT 'generated', ${(model || 'Video') + ' — ' + new Date().toLocaleDateString()}, '', ${resultUrl}, ${['video', model || 'replicate']}, '{}'
+          await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata, model_used)
+            SELECT 'generated', ${(model || 'Video') + ' — ' + new Date().toLocaleDateString()}, '', ${resultUrl}, ${['video', model || 'replicate']}, '{}', ${model || 'replicate'}
             WHERE NOT EXISTS (SELECT 1 FROM repository WHERE image_url = ${resultUrl})`;
         } catch { /* non-critical */ }
       }
