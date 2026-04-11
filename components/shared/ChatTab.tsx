@@ -3,6 +3,66 @@
 import { useState, useCallback, useRef, useEffect, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, RotateCcw, ImagePlus, X } from 'lucide-react';
+import React from 'react';
+
+// Render chat messages with basic formatting: **bold**, bullet points, numbered lists
+function FormattedMessage({ text, isUser }: { text: string; isUser: boolean }) {
+  if (isUser) return <>{text}</>;
+
+  // Split into paragraphs
+  const paragraphs = text.split('\n\n').filter(Boolean);
+
+  return (
+    <div className="space-y-2">
+      {paragraphs.map((para, i) => {
+        // Check if it's a list
+        const lines = para.split('\n');
+        const isBulletList = lines.every(l => l.trim().startsWith('- ') || l.trim().startsWith('• ') || l.trim() === '');
+        const isNumberedList = lines.every(l => /^\d+[\.\)]\s/.test(l.trim()) || l.trim() === '');
+
+        if (isBulletList && lines.filter(l => l.trim()).length > 1) {
+          return (
+            <ul key={i} className="space-y-1">
+              {lines.filter(l => l.trim()).map((line, j) => (
+                <li key={j} className="flex gap-2">
+                  <span className="text-gold shrink-0 mt-0.5">•</span>
+                  <span>{formatInline(line.replace(/^[-•]\s*/, ''))}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+
+        if (isNumberedList && lines.filter(l => l.trim()).length > 1) {
+          return (
+            <ol key={i} className="space-y-1">
+              {lines.filter(l => l.trim()).map((line, j) => (
+                <li key={j} className="flex gap-2">
+                  <span className="text-gold shrink-0 font-medium">{j + 1}.</span>
+                  <span>{formatInline(line.replace(/^\d+[\.\)]\s*/, ''))}</span>
+                </li>
+              ))}
+            </ol>
+          );
+        }
+
+        // Regular paragraph with inline formatting
+        return <p key={i}>{formatInline(para.replace(/\n/g, ' '))}</p>;
+      })}
+    </div>
+  );
+}
+
+function formatInline(text: string): React.ReactNode {
+  // Handle **bold** text
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+    }
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
+}
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -201,7 +261,7 @@ export function ChatTab({
                         ))}
                       </div>
                     )}
-                    {msg.content}
+                    <FormattedMessage text={msg.content} isUser={msg.role === 'user'} />
                     {msg.phase && msg.role === 'assistant' && (
                       <span className="block text-[10px] mt-2 opacity-50">{phaseLabels[msg.phase] || msg.phase}</span>
                     )}

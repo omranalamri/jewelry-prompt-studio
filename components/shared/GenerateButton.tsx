@@ -13,6 +13,7 @@ interface GenerateButtonProps {
   prompt: string;
   platform: PlatformId;
   referenceImageUrl?: string;
+  compact?: boolean; // hide model picker, auto-select best
 }
 
 const isVideoPlatform = (p: PlatformId) => p === 'runway' || p === 'kling';
@@ -33,7 +34,7 @@ const VIDEO_MODEL_OPTIONS = [
   { id: 'minimax', name: 'Minimax Video', badge: 'Image-to-Video', cost: '$0.88', quality: 7 },
 ];
 
-export function GenerateButton({ prompt, platform, referenceImageUrl }: GenerateButtonProps) {
+export function GenerateButton({ prompt, platform, referenceImageUrl, compact }: GenerateButtonProps) {
   const [state, setState] = useState<GenerationState>('idle');
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
@@ -194,7 +195,8 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
       {/* Model Picker + Generate Button */}
       {state === 'idle' && (
         <div className="space-y-3">
-          {/* Model selector — always visible */}
+          {/* Model selector — hidden in compact mode */}
+          {!compact && (
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {isVideo ? 'Video Model' : 'Image Model'}
@@ -222,6 +224,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
                   ))}
             </div>
           </div>
+          )}
 
           <div className="flex gap-2">
             <Button
@@ -229,10 +232,9 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
               className="flex-1 gold-gradient text-white border-0 hover:opacity-90 h-11 shadow-sm text-sm"
             >
               {isVideo ? <Play className="h-4 w-4 mr-2" /> : <ImageIcon className="h-4 w-4 mr-2" />}
-              Generate with {
-                selectedModel
-                  ? modelOptions.find(m => m.id === selectedModel)?.name
-                  : modelOptions[0].name
+              {compact
+                ? (isVideo ? 'Generate Video' : 'Generate Image')
+                : `Generate with ${selectedModel ? modelOptions.find(m => m.id === selectedModel)?.name : modelOptions[0].name}`
               }
             </Button>
             {!isVideo && (

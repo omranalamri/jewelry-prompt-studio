@@ -487,9 +487,29 @@ export function CreativeTab() {
 
             {/* Scenes */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Play className="h-5 w-5 text-gold" /> Scenes
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Play className="h-5 w-5 text-gold" /> Scenes
+                </h3>
+                <Button size="sm" className="gold-gradient text-white border-0 hover:opacity-90 text-xs"
+                  onClick={async () => {
+                    toast.info(`Generating all ${creative.scenes.length} scene images...`);
+                    for (const scene of creative.scenes) {
+                      if (scene.imagePrompt) {
+                        try {
+                          await fetch('/api/generate/image', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt: scene.imagePrompt, platform: 'midjourney', referenceImageUrl }),
+                          });
+                        } catch { /* continue */ }
+                      }
+                    }
+                    toast.success('All scene images generated! Check Repository.');
+                  }}>
+                  <Sparkles className="h-3 w-3 mr-1.5" /> Generate All Images
+                </Button>
+              </div>
               {creative.scenes.map((scene, i) => (
                 <motion.div key={scene.number} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
                   <Card>
@@ -512,7 +532,7 @@ export function CreativeTab() {
                             <Play className="h-3 w-3" /> Video Prompt
                           </p>
                           <pre className="whitespace-pre-wrap text-sm font-mono bg-muted/50 p-4 rounded-xl border leading-relaxed">{scene.videoPrompt}</pre>
-                          <div className="mt-2"><GenerateButton prompt={scene.videoPrompt} platform="runway" referenceImageUrl={referenceImageUrl || undefined} /></div>
+                          <div className="mt-2"><GenerateButton prompt={scene.videoPrompt} platform="runway" referenceImageUrl={referenceImageUrl || undefined} compact /></div>
                         </div></>
                       )}
 
@@ -522,7 +542,7 @@ export function CreativeTab() {
                             <ImageIcon className="h-3 w-3" /> Image Prompt
                           </p>
                           <pre className="whitespace-pre-wrap text-sm font-mono bg-muted/50 p-4 rounded-xl border leading-relaxed">{scene.imagePrompt}</pre>
-                          <div className="mt-2"><GenerateButton prompt={scene.imagePrompt} platform="midjourney" referenceImageUrl={referenceImageUrl || undefined} /></div>
+                          <div className="mt-2"><GenerateButton prompt={scene.imagePrompt} platform="midjourney" referenceImageUrl={referenceImageUrl || undefined} compact /></div>
                         </div></>
                       )}
 
