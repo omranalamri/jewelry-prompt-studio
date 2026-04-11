@@ -4,6 +4,7 @@ import { IMAGE_MODELS, getImageModel, getBestImageModel, formatCost, ModelInfo }
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
 import { trackGeneration } from '@/lib/learning/generation-tracker';
+import { validatePrompt } from '@/lib/jewelry/validation';
 
 export const maxDuration = 120;
 
@@ -101,10 +102,16 @@ export async function POST(req: NextRequest) {
 
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
-    const cleanPrompt = prompt
+    let cleanPrompt = prompt
       .replace(/--ar\s+\S+/g, '').replace(/--style\s+\S+/g, '')
       .replace(/--v\s+\S+/g, '').replace(/--q\s+\S+/g, '')
       .replace(/--no\s+.*/g, '').trim();
+
+    // Anti-hallucination validation — fix impossible jewelry descriptions
+    const validation = validatePrompt(cleanPrompt);
+    if (validation.correctionCount > 0) {
+      cleanPrompt = validation.correctedPrompt;
+    }
 
     const arMatch = prompt.match(/--ar\s+(\d+:\d+)/);
     const ar = arMatch ? arMatch[1] : (aspectRatio || '1:1');
@@ -152,6 +159,10 @@ export async function POST(req: NextRequest) {
             requestedModel: requestedModelId || chain[0].id,
             wasFirstChoice: modelInfo.id === (requestedModelId || chain[0].id),
             hadReference: !!referenceImageUrl,
+            validation: validation.correctionCount > 0 ? {
+              corrected: validation.correctionCount,
+              issues: validation.issues.map(i => i.issue),
+            } : null,
           },
         });
       } catch {
