@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wand2, Loader2, Download, ExternalLink, Play, Image as ImageIcon, RefreshCw, ChevronDown, FolderPlus } from 'lucide-react';
+import { Wand2, Loader2, Download, ExternalLink, Play, Image as ImageIcon, RefreshCw, FolderPlus, Camera, Grid2x2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PlatformId } from '@/types/platforms';
@@ -42,6 +42,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
   const [costInfo, setCostInfo] = useState<string | null>(null);
   const [timeInfo, setTimeInfo] = useState<number | null>(null);
   const [creativeFrameUrl, setCreativeFrameUrl] = useState<string | null>(null);
+  const [batchResults, setBatchResults] = useState<{ model: string; modelId: string; resultUrl: string; cost: number; quality: number }[]>([]);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const _showModelPicker = true; // always visible
 
@@ -171,6 +172,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
     setCostInfo(null);
     setTimeInfo(null);
     setCreativeFrameUrl(null);
+    setBatchResults([]);
   }, []);
 
   return (
@@ -207,17 +209,47 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
             </div>
           </div>
 
-          <Button
-            onClick={handleGenerate}
-            className="w-full gold-gradient text-white border-0 hover:opacity-90 h-11 shadow-sm text-sm"
-          >
-            {isVideo ? <Play className="h-4 w-4 mr-2" /> : <ImageIcon className="h-4 w-4 mr-2" />}
-            Generate with {
-              selectedModel
-                ? modelOptions.find(m => m.id === selectedModel)?.name
-                : modelOptions[0].name
-            }
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleGenerate}
+              className="flex-1 gold-gradient text-white border-0 hover:opacity-90 h-11 shadow-sm text-sm"
+            >
+              {isVideo ? <Play className="h-4 w-4 mr-2" /> : <ImageIcon className="h-4 w-4 mr-2" />}
+              Generate with {
+                selectedModel
+                  ? modelOptions.find(m => m.id === selectedModel)?.name
+                  : modelOptions[0].name
+              }
+            </Button>
+            {!isVideo && (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  setState('generating');
+                  try {
+                    const res = await fetch('/api/generate/batch', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ prompt, referenceImageUrl, count: 4 }),
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                      setBatchResults(json.data.results);
+                      setState('completed');
+                      toast.success(`${json.data.count} variations (${json.data.totalCost})`);
+                    } else {
+                      setState('failed');
+                      setError(json.error);
+                    }
+                  } catch { setState('failed'); setError('Batch failed.'); }
+                }}
+                className="h-11 px-3"
+                title="Generate 4 variations across different models"
+              >
+                <Grid2x2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -333,6 +365,46 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
               <Button variant="ghost" size="sm" onClick={handleRetry}>
                 <RefreshCw className="h-3.5 w-3.5" />
               </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Batch comparison grid */}
+      <AnimatePresence>
+        {batchResults.length > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Grid2x2 className="h-4 w-4 text-gold" />
+                <span className="text-sm font-medium">Compare {batchResults.length} Variations</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleRetry} className="text-xs">
+                <RefreshCw className="h-3 w-3 mr-1" /> Clear
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {batchResults.map((r, i) => (
+                <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}
+                  className="relative rounded-xl overflow-hidden border group">
+                  <img src={r.resultUrl} alt={r.model} className="w-full aspect-square object-cover" />
+                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 text-white">
+                    <p className="text-[10px] font-medium">{r.model}</p>
+                    <p className="text-[9px] opacity-70">${r.cost.toFixed(2)} · Q{r.quality}/10</p>
+                  </div>
+                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => { const a = document.createElement('a'); a.href = r.resultUrl; a.download = `${r.modelId}.jpg`; a.click(); }}
+                      className="h-6 w-6 rounded-full bg-black/60 text-white flex items-center justify-center"><Download className="h-3 w-3" /></button>
+                    <button onClick={async () => {
+                      try {
+                        await fetch('/api/repository', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ category: 'generated', title: `${r.model} — picked`, imageUrl: r.resultUrl, tags: ['batch', 'picked'] }) });
+                        toast.success('Saved!');
+                      } catch { /* */ }
+                    }} className="h-6 w-6 rounded-full bg-black/60 text-white flex items-center justify-center"><FolderPlus className="h-3 w-3" /></button>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         )}

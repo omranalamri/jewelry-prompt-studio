@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Sparkles, Home, FolderOpen, History, DollarSign, Palette } from 'lucide-react';
+import { Sparkles, Home, FolderOpen, History, DollarSign, Palette, Gem } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +18,7 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
           <nav className="flex items-center gap-0.5">
             {[
               { href: '/studio', icon: Home, label: 'Studio' },
+              { href: '/studio/tryon', icon: Gem, label: 'Try-On' },
               { href: '/studio/repository', icon: FolderOpen, label: 'Repo' },
               { href: '/studio/brand', icon: Palette, label: 'Brand' },
               { href: '/studio/costs', icon: DollarSign, label: 'Costs' },
