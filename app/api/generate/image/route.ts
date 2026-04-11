@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import Replicate from 'replicate';
 import { IMAGE_MODELS, getImageModel, getBestImageModel, formatCost, ModelInfo } from '@/lib/creative/model-registry';
 import { getDb } from '@/lib/db';
+import { logCost } from '@/lib/cost-tracker';
 
 export const maxDuration = 120;
 
@@ -118,12 +119,13 @@ export async function POST(req: NextRequest) {
         const resultUrl = await runModel(replicate, modelInfo, cleanPrompt, ar, referenceImageUrl);
         const elapsed = (Date.now() - startTime) / 1000;
 
-        // Auto-save to repository
+        // Auto-save to repository + log cost
         try {
           const sql = getDb();
           await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata)
             VALUES ('generated', ${modelInfo.name + ' — ' + new Date().toLocaleDateString()}, ${cleanPrompt.slice(0, 300)}, ${resultUrl}, ${[platform || 'image', modelInfo.id]}, ${JSON.stringify({ model: modelInfo.name, cost: modelInfo.costEstimate, time: elapsed, platform })})`;
         } catch { /* non-critical */ }
+        logCost({ model: modelInfo.name, type: 'image', cost: modelInfo.costEstimate, durationSeconds: elapsed, promptPreview: cleanPrompt, resultUrl });
 
         return Response.json({
           success: true,

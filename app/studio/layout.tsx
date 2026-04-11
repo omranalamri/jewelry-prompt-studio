@@ -1,12 +1,8 @@
 import Link from 'next/link';
-import { Sparkles, History, Home, FolderOpen } from 'lucide-react';
+import { Sparkles, Home, FolderOpen, History, DollarSign, Palette } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
-export default function StudioLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function StudioLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-50 border-b glass">
@@ -15,33 +11,25 @@ export default function StudioLayout({
             <div className="h-8 w-8 rounded-lg gold-gradient flex items-center justify-center">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="font-semibold text-lg tracking-tight">
+            <span className="font-semibold text-lg tracking-tight hidden sm:inline">
               <span className="gold-gradient-text">Prompt</span> Studio
             </span>
           </Link>
-          <nav className="flex items-center gap-1">
-            <Link
-              href="/studio"
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent"
-            >
-              <Home className="h-4 w-4" />
-              Studio
-            </Link>
-            <Link
-              href="/studio/repository"
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent"
-            >
-              <FolderOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Repository</span>
-            </Link>
-            <Link
-              href="/studio/history"
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-accent"
-            >
-              <History className="h-4 w-4" />
-              <span className="hidden sm:inline">History</span>
-            </Link>
-            <div className="ml-2 border-l pl-2">
+          <nav className="flex items-center gap-0.5">
+            {[
+              { href: '/studio', icon: Home, label: 'Studio' },
+              { href: '/studio/repository', icon: FolderOpen, label: 'Repo' },
+              { href: '/studio/brand', icon: Palette, label: 'Brand' },
+              { href: '/studio/costs', icon: DollarSign, label: 'Costs' },
+              { href: '/studio/history', icon: History, label: 'History' },
+            ].map(({ href, icon: Icon, label }) => (
+              <Link key={href} href={href}
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors px-2 sm:px-3 py-2 rounded-lg hover:bg-accent">
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </Link>
+            ))}
+            <div className="ml-1 border-l pl-1">
               <ThemeToggle />
             </div>
           </nav>

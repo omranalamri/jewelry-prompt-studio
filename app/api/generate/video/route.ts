@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import Replicate from 'replicate';
 import { VIDEO_MODELS, getVideoModel, getBestVideoModel, formatCost, ModelInfo } from '@/lib/creative/model-registry';
 import { getDb } from '@/lib/db';
+import { logCost } from '@/lib/cost-tracker';
 
 export const maxDuration = 300;
 
@@ -160,6 +161,7 @@ export async function POST(req: NextRequest) {
             pipeline: 'prompt → creative frame (Nano Banana Pro) → animate',
           },
         });
+        logCost({ model: modelInfo.name, type: 'video', cost: modelInfo.costEstimate + frameCost, promptPreview: prompt });
       } catch {
         continue;
       }
