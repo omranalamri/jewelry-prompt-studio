@@ -64,6 +64,27 @@ export async function handleChatRequest(
       return { success: false, error: 'Failed to parse response.', code: 'AI_PARSE_ERROR', status: 500 };
     }
 
+    // Auto-cache reference analyses when the AI analyzes images
+    // This saves them as reusable style templates
+    try {
+      const parsed = data as Record<string, unknown>;
+      if (parsed.analysis && typeof parsed.analysis === 'object') {
+        const { cacheAnalysis } = await import('@/lib/learning/reference-cache');
+        const analysis = parsed.analysis as Record<string, string>;
+        // Find the first image URL from messages
+        const imageMsg = messages.find(m => m.images && m.images.length > 0);
+        if (imageMsg?.images?.[0]) {
+          cacheAnalysis({
+            imageUrl: `analyzed-${Date.now()}`,
+            analysis: parsed.analysis as Record<string, unknown>,
+            jewelryType: (analysis.assets || '').includes('ring') ? 'ring' : (analysis.assets || '').includes('necklace') ? 'necklace' : undefined,
+            lighting: analysis.lighting,
+            mood: analysis.mood,
+          }).catch(() => {});
+        }
+      }
+    } catch { /* non-critical */ }
+
     return { success: true, data, rawJson: rawText };
   } catch (error) {
     if (error instanceof Anthropic.APIError) {

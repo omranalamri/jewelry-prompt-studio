@@ -46,6 +46,24 @@ export async function buildEnhancedPrompt(ctx: PromptContext): Promise<string> {
     prompt += '\n\nJEWELRY DOMAIN KNOWLEDGE:\n' + domainKnowledge.join('\n\n');
   }
 
+  // Inject brand guidelines if they exist
+  try {
+    const sql = getDb();
+    const brand = await sql`SELECT name, colors, tone, mood, guidelines_text FROM brand_guidelines LIMIT 1`;
+    if (brand.length > 0 && brand[0].name) {
+      const b = brand[0];
+      const brandParts: string[] = [];
+      if (b.name) brandParts.push(`Brand: ${b.name}`);
+      if (b.tone) brandParts.push(`Tone: ${b.tone}`);
+      if (b.mood) brandParts.push(`Default mood: ${b.mood}`);
+      if (b.colors && Array.isArray(b.colors) && b.colors.length > 0) brandParts.push(`Brand colors: ${(b.colors as string[]).join(', ')}`);
+      if (b.guidelines_text) brandParts.push(`Guidelines: ${b.guidelines_text}`);
+      if (brandParts.length > 0) {
+        prompt += '\n\nBRAND GUIDELINES (auto-applied):\n' + brandParts.join('\n');
+      }
+    }
+  } catch { /* non-critical */ }
+
   if (!ctx.jewelryType) return prompt;
 
   try {

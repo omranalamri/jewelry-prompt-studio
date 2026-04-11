@@ -7,7 +7,8 @@ function errorResponse(code: string, message: string, status: number) {
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
+    let formData;
+    try { formData = await req.formData(); } catch { return errorResponse('MISSING_FILE', 'No file provided.', 400); }
     const file = formData.get('file') as File | null;
     const context = formData.get('context') as string || 'reference';
 

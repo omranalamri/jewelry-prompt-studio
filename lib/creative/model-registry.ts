@@ -171,3 +171,32 @@ export function formatCost(cost: number): string {
   if (cost < 0.01) return '<$0.01';
   return `$${cost.toFixed(2)}`;
 }
+
+// Material-aware model recommendation
+// Returns the best model for a specific jewelry context
+export function getSmartImageModel(context?: { hasText?: boolean; hasDiamonds?: boolean; isProductShot?: boolean }): ModelInfo {
+  if (!context) return IMAGE_MODELS[0];
+
+  // Text/engravings → Nano Banana Pro handles text best via image_input reference
+  if (context.hasText) return IMAGE_MODELS.find(m => m.id === 'nano-banana-pro') || IMAGE_MODELS[0];
+
+  // Product shots → Recraft excels at clean product photography
+  if (context.isProductShot) return IMAGE_MODELS.find(m => m.id === 'recraft-v3') || IMAGE_MODELS[0];
+
+  // Diamonds/sparkle → Flux Ultra raw mode captures reflections best
+  if (context.hasDiamonds) return IMAGE_MODELS.find(m => m.id === 'flux-ultra') || IMAGE_MODELS[0];
+
+  return IMAGE_MODELS[0]; // default: Nano Banana Pro (highest quality)
+}
+
+export function getSmartVideoModel(context?: { needsAudio?: boolean; hasReferenceFrame?: boolean }): ModelInfo {
+  if (!context) return VIDEO_MODELS[0];
+
+  // Audio needed → Veo 3 is the only option
+  if (context.needsAudio) return VIDEO_MODELS.find(m => m.id === 'veo-3') || VIDEO_MODELS[0];
+
+  // Has reference frame → Runway preserves design best via image-to-video
+  if (context.hasReferenceFrame) return VIDEO_MODELS.find(m => m.id === 'runway') || VIDEO_MODELS[0];
+
+  return VIDEO_MODELS[0]; // default: Veo 3
+}

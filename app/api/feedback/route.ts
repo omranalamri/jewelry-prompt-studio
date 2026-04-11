@@ -22,6 +22,18 @@ export async function POST(req: NextRequest) {
       WHERE id = ${generationId}
     `;
 
+    // Auto-save 5-star generations as reusable prompt templates
+    if (rating === 5) {
+      try {
+        const gen = await sql`SELECT prompt_text, generation_model, jewelry_type, result_url FROM generations WHERE id = ${generationId} LIMIT 1`;
+        if (gen.length > 0 && gen[0].result_url) {
+          await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata)
+            SELECT 'reference', ${'5-Star Template — ' + (gen[0].jewelry_type || 'jewelry')}, ${(gen[0].prompt_text as string || '').slice(0, 300)}, ${gen[0].result_url}, ${['template', '5-star', gen[0].jewelry_type || 'jewelry', gen[0].generation_model || ''].filter(Boolean)}, ${JSON.stringify({ rating: 5, model: gen[0].generation_model })}
+            WHERE NOT EXISTS (SELECT 1 FROM repository WHERE image_url = ${gen[0].result_url})`;
+        }
+      } catch { /* non-critical */ }
+    }
+
     // Check if we should refresh combo stats (every 10 new ratings)
     const ratedCount = await sql`SELECT COUNT(*) as c FROM generations WHERE user_rating IS NOT NULL AND rated_at > now() - interval '1 hour'`;
     if (parseInt(ratedCount[0].c as string) % 10 === 0) {
