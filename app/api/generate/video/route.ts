@@ -3,6 +3,7 @@ import Replicate from 'replicate';
 import { VIDEO_MODELS, getVideoModel, getBestVideoModel, formatCost, ModelInfo } from '@/lib/creative/model-registry';
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
+import { trackGeneration } from '@/lib/learning/generation-tracker';
 
 export const maxDuration = 300;
 
@@ -162,6 +163,11 @@ export async function POST(req: NextRequest) {
           },
         });
         logCost({ model: modelInfo.name, type: 'video', cost: modelInfo.costEstimate + frameCost, promptPreview: prompt });
+        trackGeneration({
+          promptText: prompt, generationModel: modelInfo.id, generationType: 'video',
+          referenceImageUrl: referenceImageUrl || undefined,
+          cost: modelInfo.costEstimate + frameCost,
+        });
       } catch {
         continue;
       }

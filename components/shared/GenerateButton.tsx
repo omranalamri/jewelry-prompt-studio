@@ -39,6 +39,8 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
   const [videoProvider, setVideoProvider] = useState<string>('replicate');
   const [error, setError] = useState<string | null>(null);
   const [modelUsed, setModelUsed] = useState<string | null>(null);
+  const [generationId, setGenerationId] = useState<string | null>(null);
+  const [userRating, setUserRating] = useState<number | null>(null);
   const [costInfo, setCostInfo] = useState<string | null>(null);
   const [timeInfo, setTimeInfo] = useState<number | null>(null);
   const [creativeFrameUrl, setCreativeFrameUrl] = useState<string | null>(null);
@@ -126,6 +128,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
 
         setResultUrl(json.data.resultUrl);
         setModelUsed(json.data.model);
+        setGenerationId(json.data.id || null);
         setCostInfo(json.data.cost || null);
         setTimeInfo(json.data.timeSeconds || null);
         setState('completed');
@@ -173,6 +176,8 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
     setTimeInfo(null);
     setCreativeFrameUrl(null);
     setBatchResults([]);
+    setGenerationId(null);
+    setUserRating(null);
   }, []);
 
   return (
@@ -366,6 +371,35 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
                 <RefreshCw className="h-3.5 w-3.5" />
               </Button>
             </div>
+
+            {/* Quick rating */}
+            {generationId && (
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-muted-foreground">Rate this result:</span>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button key={star}
+                      onClick={async () => {
+                        setUserRating(star);
+                        try {
+                          await fetch('/api/feedback', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ generationId, rating: star }),
+                          });
+                          toast.success(`Rated ${star}/5 — this helps improve future results`);
+                        } catch { /* non-critical */ }
+                      }}
+                      className={`text-lg transition-all hover:scale-110 ${
+                        userRating && star <= userRating ? 'text-gold' : 'text-muted-foreground/30 hover:text-gold/60'
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

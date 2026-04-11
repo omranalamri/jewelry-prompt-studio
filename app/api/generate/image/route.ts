@@ -3,6 +3,7 @@ import Replicate from 'replicate';
 import { IMAGE_MODELS, getImageModel, getBestImageModel, formatCost, ModelInfo } from '@/lib/creative/model-registry';
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
+import { trackGeneration } from '@/lib/learning/generation-tracker';
 
 export const maxDuration = 120;
 
@@ -127,10 +128,17 @@ export async function POST(req: NextRequest) {
         } catch { /* non-critical */ }
         logCost({ model: modelInfo.name, type: 'image', cost: modelInfo.costEstimate, durationSeconds: elapsed, promptPreview: cleanPrompt, resultUrl });
 
+        // Track for learning system
+        const genId = await trackGeneration({
+          promptText: cleanPrompt, generationModel: modelInfo.id, generationType: 'image',
+          aspectRatio: ar, wasFirstChoice: modelInfo.id === (requestedModelId || chain[0].id),
+          referenceImageUrl, resultUrl, cost: modelInfo.costEstimate, durationSeconds: elapsed,
+        });
+
         return Response.json({
           success: true,
           data: {
-            id: crypto.randomUUID(),
+            id: genId || crypto.randomUUID(),
             provider: modelInfo.id,
             model: modelInfo.name,
             modelId: modelInfo.id,

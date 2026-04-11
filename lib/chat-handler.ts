@@ -1,5 +1,6 @@
 import { getAnthropicClient, callWithFallback } from '@/lib/anthropic';
 import { parseClaudeJSON } from '@/lib/utils/parseResponse';
+import { buildEnhancedPrompt } from '@/lib/learning/prompt-builder';
 import Anthropic from '@anthropic-ai/sdk';
 
 interface ChatImage {
@@ -16,11 +17,18 @@ interface IncomingMessage {
 
 export async function handleChatRequest(
   messages: IncomingMessage[],
-  systemPrompt: string
+  systemPrompt: string,
+  jewelryType?: string
 ): Promise<{ success: true; data: unknown; rawJson: string } | { success: false; error: string; code: string; status: number }> {
   if (!messages || messages.length === 0) {
     return { success: false, error: 'Please provide a message.', code: 'MISSING_INPUT', status: 400 };
   }
+
+  // Enhance the system prompt with learned knowledge
+  const enhancedPrompt = await buildEnhancedPrompt({
+    basePrompt: systemPrompt,
+    jewelryType,
+  });
 
   const formatted: Anthropic.MessageParam[] = messages.map((msg) => {
     if (msg.role === 'assistant') {
@@ -43,7 +51,7 @@ export async function handleChatRequest(
   try {
     const anthropic = getAnthropicClient();
     const message = await callWithFallback((model) =>
-      anthropic.messages.create({ model, max_tokens: 4000, system: systemPrompt, messages: formatted })
+      anthropic.messages.create({ model, max_tokens: 4000, system: enhancedPrompt, messages: formatted })
     );
 
     const rawText = message.content
