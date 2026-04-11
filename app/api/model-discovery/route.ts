@@ -95,12 +95,25 @@ export async function POST(req: NextRequest) {
 
       let newCount = 0;
       for (const m of discovered) {
-        // Assess jewelry relevance based on capabilities
-        let relevance = 'Low — general purpose';
-        if (m.supportsImage && m.type === 'image') relevance = 'Medium — supports reference images for jewelry consistency';
-        if (m.supportsImage && m.type === 'video') relevance = 'High — image-to-video preserves jewelry design';
-        if (m.supportsAudio && m.type === 'video') relevance = 'High — video with audio for ads/reels';
-        if (m.runs > 5000000) relevance += ' (very popular: ' + (m.runs / 1000000).toFixed(1) + 'M runs)';
+        // Detailed jewelry relevance rationale
+        const reasons: string[] = [];
+
+        if (m.supportsImage && m.type === 'image') reasons.push('Accepts reference images — critical for preserving exact jewelry design during generation');
+        if (m.supportsImage && m.type === 'video') reasons.push('Image-to-video capability — animate a perfect still frame, preventing jewelry hallucination');
+        if (m.supportsAudio && m.type === 'video') reasons.push('Generates audio with video — complete ad-ready content for Instagram Reels and TikTok');
+        if (m.runs > 10000000) reasons.push('Extremely popular (' + (m.runs / 1e6).toFixed(0) + 'M runs) — well-tested, reliable, community support');
+        else if (m.runs > 1000000) reasons.push('Popular (' + (m.runs / 1e6).toFixed(1) + 'M runs) — battle-tested at scale');
+        if (m.sourceId.includes('seedance')) reasons.push('ByteDance Seedance — excellent for metallic surface rendering and jewelry motion');
+        if (m.sourceId.includes('kling')) reasons.push('Kling — industry-leading for metallic physics and realistic motion');
+        if (m.sourceId.includes('veo')) reasons.push('Google Veo — highest cinematic quality, native audio');
+        if (m.sourceId.includes('flux') || m.sourceId.includes('sdxl')) reasons.push('Diffusion model — good for editorial stills but may hallucinate jewelry details');
+        if (m.sourceId.includes('ideogram')) reasons.push('Excellent text rendering — useful for engraved jewelry and branded pieces');
+        if (m.sourceId.includes('photon') || m.sourceId.includes('luma')) reasons.push('Luma — strong HDR and diamond sparkle rendering');
+
+        if (reasons.length === 0) reasons.push('General purpose model — evaluate for specific jewelry use case');
+
+        const relevance = reasons.join('. ');
+        const impact = reasons.length >= 3 ? 'High' : reasons.length >= 2 ? 'Medium' : 'Low';
 
         try {
           await sql`INSERT INTO discovered_models (source, source_id, name, provider, model_type, description, runs, supports_image_input, supports_audio, jewelry_relevance)

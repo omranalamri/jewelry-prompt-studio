@@ -16,6 +16,10 @@ interface RepoItem {
   image_url: string;
   tags: string[];
   created_at: string;
+  prompt_text?: string | null;
+  model_used?: string | null;
+  reference_url?: string | null;
+  generation_id?: string | null;
 }
 
 const CATEGORIES = [
@@ -338,11 +342,23 @@ export default function RepositoryPage() {
                 )}
               </div>
 
+              {/* Lineage — reference image if exists */}
+              {selectedItem.reference_url && (
+                <div className="px-4 pt-3 pb-1 border-t">
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5">Reference Used</p>
+                  <img src={selectedItem.reference_url} alt="Reference" className="h-16 w-16 object-cover rounded-lg border inline-block" />
+                  <span className="text-xs text-muted-foreground ml-2">→ produced this output</span>
+                </div>
+              )}
+
               {/* Info bar */}
               <div className="p-4 border-t space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-sm">{selectedItem.title}</h3>
+                    {selectedItem.model_used && (
+                      <p className="text-xs text-muted-foreground mt-0.5">Model: <span className="font-medium text-foreground">{selectedItem.model_used}</span></p>
+                    )}
                     {selectedItem.description && (
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{selectedItem.description}</p>
                     )}
@@ -400,6 +416,41 @@ export default function RepositoryPage() {
                     </div>
                   </div>
                 )}
+                {/* Prompt used */}
+                {selectedItem.prompt_text && (
+                  <div className="mt-2">
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">Prompt Used</p>
+                    <pre className="text-[10px] font-mono bg-muted/50 p-2 rounded-lg leading-relaxed max-h-[80px] overflow-y-auto">{selectedItem.prompt_text}</pre>
+                  </div>
+                )}
+
+                {/* Save as Recipe button */}
+                {selectedItem.category === 'generated' && selectedItem.prompt_text && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/recipes', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            name: selectedItem.title,
+                            promptText: selectedItem.prompt_text,
+                            modelId: selectedItem.model_used || 'nano-banana-pro',
+                            referenceImageUrl: selectedItem.reference_url,
+                            resultImageUrl: selectedItem.image_url,
+                            userRating: lightboxRating,
+                          }),
+                        });
+                        const json = await res.json();
+                        if (json.success) toast.success('Saved as reusable recipe!');
+                      } catch { toast.error('Failed to save recipe'); }
+                    }}
+                    className="w-full text-xs py-2 rounded-lg border border-gold/30 hover:bg-gold/5 transition-all text-gold-dark dark:text-gold-light font-medium mt-1"
+                  >
+                    Save as Reusable Recipe
+                  </button>
+                )}
+
                 <p className="text-[10px] text-muted-foreground">
                   {new Date(selectedItem.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   {' · '}
