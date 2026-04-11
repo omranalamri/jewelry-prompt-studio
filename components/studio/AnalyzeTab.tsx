@@ -59,6 +59,7 @@ export function AnalyzeTab() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const refTypeRef = useRef<'reference' | 'asset'>('reference');
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -194,46 +195,85 @@ export function AnalyzeTab() {
         <div>
           <h2 className="text-xl font-semibold">Analyze & Generate</h2>
           <p className="text-sm text-muted-foreground">
-            Upload your jewelry photo. I&apos;ll analyze it, ask a few questions, and create perfect prompts.
+            Upload a reference look + your jewelry. I&apos;ll recreate that style with your piece.
           </p>
         </div>
       </div>
 
-      {/* Empty state */}
+      {/* Empty state — dual upload */}
       {messages.length === 0 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          {/* Upload area */}
-          <Card className="border-dashed border-2 hover:border-gold/40 transition-colors cursor-pointer"
-            onClick={() => fileInputRef.current?.click()}>
-            <CardContent className="py-10 text-center">
-              <div className="flex justify-center mb-3">
-                <div className="h-14 w-14 rounded-2xl gold-gradient flex items-center justify-center">
-                  <ImagePlus className="h-7 w-7 text-white" />
+          {/* Two upload zones side by side */}
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Reference image */}
+            <Card className="border-dashed border-2 hover:border-gold/40 transition-colors cursor-pointer"
+              onClick={() => { refTypeRef.current = 'reference'; fileInputRef.current?.click(); }}>
+              <CardContent className="py-8 text-center">
+                <div className="flex justify-center mb-3">
+                  <div className="h-12 w-12 rounded-xl bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center">
+                    <Eye className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
                 </div>
-              </div>
-              <p className="font-medium mb-1">Drop or click to upload your jewelry photo</p>
-              <p className="text-sm text-muted-foreground">I&apos;ll analyze it and guide you step by step</p>
-            </CardContent>
-          </Card>
+                <p className="font-medium mb-1 text-sm">Reference Image</p>
+                <p className="text-xs text-muted-foreground">The look you want to copy</p>
+                <p className="text-[10px] text-muted-foreground mt-1">A competitor ad, magazine shot, or mood image</p>
+              </CardContent>
+            </Card>
+
+            {/* Jewelry asset */}
+            <Card className="border-dashed border-2 hover:border-gold/40 transition-colors cursor-pointer"
+              onClick={() => { refTypeRef.current = 'asset'; fileInputRef.current?.click(); }}>
+              <CardContent className="py-8 text-center">
+                <div className="flex justify-center mb-3">
+                  <div className="h-12 w-12 rounded-xl gold-gradient flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+                <p className="font-medium mb-1 text-sm">Your Jewelry</p>
+                <p className="text-xs text-muted-foreground">Your actual piece to feature</p>
+                <p className="text-[10px] text-muted-foreground mt-1">The ring, necklace, pendant, or bracelet</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Image previews */}
+          {pendingImages.length > 0 && (
+            <div className="flex gap-3 p-3 rounded-xl bg-muted/50 border">
+              {pendingImages.map((img, i) => (
+                <div key={i} className="relative group">
+                  <img src={img.preview} alt="Upload" className="h-20 w-20 object-cover rounded-lg border" />
+                  <button onClick={(e) => { e.stopPropagation(); removePendingImage(i); }}
+                    className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              <Button onClick={() => sendMessage('Here are my images — analyze both and help me recreate the reference style with my jewelry.')}
+                className="gold-gradient text-white border-0 hover:opacity-90 self-center">
+                <Send className="h-4 w-4 mr-2" /> Analyze
+              </Button>
+            </div>
+          )}
 
           {/* How it works */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-2">
             {[
-              { step: '1', title: 'Upload', desc: 'Share your jewelry photo' },
-              { step: '2', title: 'Chat', desc: 'I ask about size, material, goals' },
-              { step: '3', title: 'Generate', desc: 'Get perfect prompts + images' },
+              { step: '1', title: 'Reference', desc: 'Upload the look' },
+              { step: '2', title: 'Jewelry', desc: 'Upload your piece' },
+              { step: '3', title: 'Chat', desc: 'I ask key details' },
+              { step: '4', title: 'Generate', desc: 'Get prompts + images' },
             ].map(s => (
-              <div key={s.step} className="text-center p-3 rounded-xl bg-muted/50">
-                <div className="h-7 w-7 rounded-full gold-gradient text-white text-xs font-bold flex items-center justify-center mx-auto mb-2">{s.step}</div>
-                <p className="text-xs font-medium">{s.title}</p>
-                <p className="text-[10px] text-muted-foreground">{s.desc}</p>
+              <div key={s.step} className="text-center p-2 rounded-xl bg-muted/50">
+                <div className="h-6 w-6 rounded-full gold-gradient text-white text-[10px] font-bold flex items-center justify-center mx-auto mb-1">{s.step}</div>
+                <p className="text-[10px] font-medium">{s.title}</p>
+                <p className="text-[9px] text-muted-foreground">{s.desc}</p>
               </div>
             ))}
           </div>
 
           {/* Quick starts */}
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Or start with a description:</p>
+            <p className="text-xs text-muted-foreground">Or start by describing what you need:</p>
             <div className="grid sm:grid-cols-2 gap-2">
               {QUICK_STARTS.map((qs, i) => (
                 <motion.button key={i} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
