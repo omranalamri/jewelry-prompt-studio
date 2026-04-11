@@ -27,11 +27,12 @@ const IMAGE_MODEL_OPTIONS = [
 ];
 
 const VIDEO_MODEL_OPTIONS = [
-  { id: 'veo-3', name: 'Google Veo 3', badge: 'Best + Audio', cost: '$1.25', quality: 10 },
-  { id: 'seedance', name: 'Seedance 1.5 Pro', badge: 'Audio + Reference', cost: '$0.40', quality: 9 },
+  { id: 'kling-2.5', name: 'Kling 2.5 Pro', badge: 'Best Motion', cost: '$0.35', quality: 10 },
+  { id: 'veo-3', name: 'Google Veo 3', badge: 'Cinema + Audio', cost: '$1.25', quality: 10 },
+  { id: 'seedance-2', name: 'Seedance 2.0', badge: 'Fast + Multimodal', cost: '$0.30', quality: 9 },
   { id: 'runway', name: 'Runway Gen-3', badge: 'Design Accurate', cost: '$0.25', quality: 9 },
-  { id: 'veo-2', name: 'Google Veo 2', badge: 'Fast + Quality', cost: '$0.50', quality: 9 },
-  { id: 'minimax', name: 'Minimax Video', badge: 'Image-to-Video', cost: '$0.88', quality: 7 },
+  { id: 'seedance', name: 'Seedance 1.5', badge: 'Audio + Reference', cost: '$0.40', quality: 9 },
+  { id: 'veo-2', name: 'Google Veo 2', badge: 'Reliable', cost: '$0.50', quality: 9 },
 ];
 
 export function GenerateButton({ prompt, platform, referenceImageUrl, compact }: GenerateButtonProps) {

@@ -84,8 +84,12 @@ async function runWithReplicate(
   firstFrameUrl: string | null, duration: number, aspectRatio: string
 ) {
   let input: Record<string, unknown>;
-  if (modelInfo.id === 'veo-3') {
+  if (modelInfo.id === 'kling-2.5') {
+    input = { prompt, duration: Math.min(duration, 10), aspect_ratio: aspectRatio, ...(firstFrameUrl && { start_image: firstFrameUrl }) };
+  } else if (modelInfo.id === 'veo-3') {
     input = { prompt, duration, aspect_ratio: aspectRatio, resolution: '1080p', generate_audio: true, ...(firstFrameUrl && { image: firstFrameUrl }) };
+  } else if (modelInfo.id === 'seedance-2') {
+    input = { prompt, duration: Math.min(duration, 10), aspect_ratio: aspectRatio, generate_audio: true, ...(firstFrameUrl && { image: firstFrameUrl, reference_images: [firstFrameUrl] }) };
   } else if (modelInfo.id === 'seedance') {
     input = { prompt, duration: Math.min(duration, 10), aspect_ratio: aspectRatio, generate_audio: true, camera_fixed: false, ...(firstFrameUrl && { image: firstFrameUrl }) };
   } else if (modelInfo.id === 'veo-2') {
