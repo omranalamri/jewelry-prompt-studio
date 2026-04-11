@@ -41,6 +41,10 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
   const [modelUsed, setModelUsed] = useState<string | null>(null);
   const [generationId, setGenerationId] = useState<string | null>(null);
   const [userRating, setUserRating] = useState<number | null>(null);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [autoReview, setAutoReview] = useState<{ rootCause?: string; suggestedFix?: string; mainIssues?: string[] } | null>(null);
   const [costInfo, setCostInfo] = useState<string | null>(null);
   const [timeInfo, setTimeInfo] = useState<number | null>(null);
   const [creativeFrameUrl, setCreativeFrameUrl] = useState<string | null>(null);
@@ -178,6 +182,10 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
     setBatchResults([]);
     setGenerationId(null);
     setUserRating(null);
+    setShowFeedbackForm(false);
+    setFeedbackComment('');
+    setSelectedTags([]);
+    setAutoReview(null);
   }, []);
 
   return (
@@ -372,32 +380,117 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
               </Button>
             </div>
 
-            {/* Quick rating */}
+            {/* Rating + Feedback */}
             {generationId && (
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-muted-foreground">Rate this result:</span>
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button key={star}
-                      onClick={async () => {
-                        setUserRating(star);
-                        try {
-                          await fetch('/api/feedback', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ generationId, rating: star }),
-                          });
-                          toast.success(`Rated ${star}/5 — this helps improve future results`);
-                        } catch { /* non-critical */ }
-                      }}
-                      className={`text-lg transition-all hover:scale-110 ${
-                        userRating && star <= userRating ? 'text-gold' : 'text-muted-foreground/30 hover:text-gold/60'
-                      }`}
-                    >
-                      ★
-                    </button>
-                  ))}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Rate this result:</span>
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button key={star}
+                        onClick={async () => {
+                          setUserRating(star);
+                          try {
+                            await fetch('/api/feedback', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ generationId, rating: star }),
+                            });
+                            if (star >= 4) {
+                              toast.success(`Rated ${star}/5 — great, this helps improve future results!`);
+                            }
+                          } catch { /* non-critical */ }
+
+                          // Auto-review on low ratings
+                          if (star <= 3 && resultUrl) {
+                            setShowFeedbackForm(true);
+                            try {
+                              const reviewRes = await fetch('/api/feedback/auto-review', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ generationId, resultUrl, userRating: star }),
+                              });
+                              const reviewJson = await reviewRes.json();
+                              if (reviewJson.success) setAutoReview(reviewJson.data.review);
+                            } catch { /* non-critical */ }
+                          }
+                        }}
+                        className={`text-lg transition-all hover:scale-110 ${
+                          userRating && star <= userRating ? (userRating <= 2 ? 'text-destructive' : userRating <= 3 ? 'text-amber-500' : 'text-gold') : 'text-muted-foreground/30 hover:text-gold/60'
+                        }`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Feedback form — shows on low ratings */}
+                <AnimatePresence>
+                  {showFeedbackForm && userRating && userRating <= 3 && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden space-y-2">
+                      {/* Issue tags */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {['wrong-design', 'plastic-look', 'bad-lighting', 'wrong-proportions', 'text-garbled', 'wrong-metal', 'ai-artifacts', 'wrong-style'].map(tag => (
+                          <button key={tag}
+                            onClick={() => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
+                            className={`text-[10px] px-2 py-1 rounded-full border transition-all ${
+                              selectedTags.includes(tag) ? 'border-destructive bg-destructive/10 text-destructive' : 'hover:border-destructive/30'
+                            }`}>
+                            {tag.replace('-', ' ')}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Comment box */}
+                      <textarea
+                        placeholder="What went wrong? (helps improve future generations)"
+                        value={feedbackComment}
+                        onChange={(e) => setFeedbackComment(e.target.value)}
+                        rows={2}
+                        className="w-full text-xs border rounded-lg px-3 py-2 bg-background resize-none"
+                      />
+
+                      <Button size="sm" variant="outline" className="w-full text-xs h-8"
+                        onClick={async () => {
+                          try {
+                            await fetch('/api/feedback', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ generationId, rating: userRating, feedback: feedbackComment, tags: selectedTags }),
+                            });
+                            toast.success('Feedback saved — we\'ll improve based on this');
+                            setShowFeedbackForm(false);
+                          } catch { /* */ }
+                        }}>
+                        Submit Feedback
+                      </Button>
+
+                      {/* Auto-review results */}
+                      {autoReview && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-lg bg-muted/50 border space-y-2">
+                          <p className="text-xs font-medium flex items-center gap-1.5">
+                            <span className="h-4 w-4 rounded-full gold-gradient flex items-center justify-center text-white text-[8px]">AI</span>
+                            Auto-Analysis
+                          </p>
+                          {autoReview?.rootCause && (
+                            <p className="text-xs text-muted-foreground"><span className="font-medium">Root cause:</span> {autoReview?.rootCause as string}</p>
+                          )}
+                          {autoReview?.suggestedFix && (
+                            <p className="text-xs text-muted-foreground"><span className="font-medium">Fix:</span> {autoReview?.suggestedFix as string}</p>
+                          )}
+                          {autoReview?.mainIssues && (
+                            <div className="flex gap-1 flex-wrap">
+                              {(autoReview?.mainIssues as string[]).map((issue, i) => (
+                                <span key={i} className="text-[9px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">{issue}</span>
+                              ))}
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
           </motion.div>
