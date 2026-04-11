@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
         try {
           const sql = getDb();
           await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata)
-            SELECT 'generated', ${'Runway Video — ' + new Date().toLocaleDateString()}, '', ${resultUrl}, ${'{"video","runway"}'}, '{}'
+            SELECT 'generated', ${'Runway Video — ' + new Date().toLocaleDateString()}, '', ${resultUrl}, ${['video', 'runway']}, '{}'
             WHERE NOT EXISTS (SELECT 1 FROM repository WHERE image_url = ${resultUrl})`;
         } catch { /* non-critical */ }
       }
