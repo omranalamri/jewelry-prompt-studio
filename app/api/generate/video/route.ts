@@ -85,6 +85,8 @@ async function runWithReplicate(
   let input: Record<string, unknown>;
   if (modelInfo.id === 'veo-3') {
     input = { prompt, duration, aspect_ratio: aspectRatio, resolution: '1080p', generate_audio: true, ...(firstFrameUrl && { image: firstFrameUrl }) };
+  } else if (modelInfo.id === 'seedance') {
+    input = { prompt, duration: Math.min(duration, 10), aspect_ratio: aspectRatio, generate_audio: true, camera_fixed: false, ...(firstFrameUrl && { image: firstFrameUrl }) };
   } else if (modelInfo.id === 'veo-2') {
     input = { prompt, duration: Math.min(duration, 8), aspect_ratio: aspectRatio, ...(firstFrameUrl && { image: firstFrameUrl }) };
   } else {

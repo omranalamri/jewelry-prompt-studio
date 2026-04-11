@@ -32,6 +32,7 @@ export default function RepositoryPage() {
   const [items, setItems] = useState<RepoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<RepoItem | null>(null);
+  const [lightboxRating, setLightboxRating] = useState<number | null>(null);
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [showUpload, setShowUpload] = useState(false);
@@ -313,7 +314,7 @@ export default function RepositoryPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-            onClick={() => setSelectedItem(null)}
+            onClick={() => { setSelectedItem(null); setLightboxRating(null); }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -323,7 +324,7 @@ export default function RepositoryPage() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close button */}
-              <button onClick={() => setSelectedItem(null)}
+              <button onClick={() => { setSelectedItem(null); setLightboxRating(null); }}
                 className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors">
                 <X className="h-4 w-4" />
               </button>
@@ -371,6 +372,32 @@ export default function RepositoryPage() {
                     {selectedItem.tags.map((tag) => (
                       <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
                     ))}
+                  </div>
+                )}
+                {/* Rating — for generated items */}
+                {selectedItem.category === 'generated' && (
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-xs text-muted-foreground">Rate this:</span>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button key={star}
+                          onClick={async () => {
+                            setLightboxRating(star);
+                            // Find matching generation by URL
+                            try {
+                              await fetch('/api/feedback', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ generationId: selectedItem.id, rating: star }),
+                              });
+                              toast.success(`Rated ${star}/5`);
+                            } catch { /* */ }
+                          }}
+                          className={`text-base transition-all hover:scale-110 ${
+                            lightboxRating && star <= lightboxRating ? 'text-gold' : 'text-muted-foreground/30 hover:text-gold/60'
+                          }`}>★</button>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <p className="text-[10px] text-muted-foreground">
