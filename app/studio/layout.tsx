@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Sparkles, Home, FolderOpen, History, DollarSign, Palette, Gem, Brain, Cpu, Telescope } from 'lucide-react';
+import { Sparkles, Home, FolderOpen, History, DollarSign, Palette, Gem, Brain, Cpu, Telescope, Compass } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +25,7 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
               { href: '/studio/learn', icon: Brain, label: 'Learn' },
               { href: '/studio/models', icon: Cpu, label: 'Models' },
               { href: '/studio/research', icon: Telescope, label: 'Research' },
+              { href: '/studio/strategy', icon: Compass, label: 'Strategy' },
               { href: '/studio/history', icon: History, label: 'History' },
             ].map(({ href, icon: Icon, label }) => (
               <Link key={href} href={href}
