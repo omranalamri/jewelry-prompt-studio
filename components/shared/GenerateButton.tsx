@@ -385,7 +385,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
             {generationId && (
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Rate this result:</span>
+                  <span className="text-xs text-muted-foreground">Rate this {isVideo ? 'video' : 'image'}:</span>
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button key={star}
@@ -395,7 +395,7 @@ export function GenerateButton({ prompt, platform, referenceImageUrl }: Generate
                             await fetch('/api/feedback', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ generationId, rating: star }),
+                              body: JSON.stringify({ generationId, rating: star, tags: [isVideo ? 'video-rating' : 'image-rating'] }),
                             });
                             if (star >= 4) {
                               toast.success(`Rated ${star}/5 — great, this helps improve future results!`);

@@ -7,6 +7,52 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+function SummaryStats({ data }: { data: unknown }) {
+  const s = (data || {}) as Record<string, number>;
+  return (
+    <div className="grid grid-cols-4 gap-3">
+      <div className="text-center p-2 rounded-lg bg-muted/50">
+        <p className="text-lg font-bold">{s.totalFragments || 0}</p>
+        <p className="text-[9px] text-muted-foreground">Learned Rules</p>
+      </div>
+      <div className="text-center p-2 rounded-lg bg-muted/50">
+        <p className="text-lg font-bold">{s.totalPatterns || 0}</p>
+        <p className="text-[9px] text-muted-foreground">Patterns Found</p>
+      </div>
+      <div className="text-center p-2 rounded-lg bg-muted/50">
+        <p className="text-lg font-bold">{s.appliedPatterns || 0}</p>
+        <p className="text-[9px] text-muted-foreground">Applied</p>
+      </div>
+      <div className="text-center p-2 rounded-lg bg-muted/50">
+        <p className="text-lg font-bold">{s.avgLift ? (s.avgLift * 100).toFixed(0) + '%' : '—'}</p>
+        <p className="text-[9px] text-muted-foreground">Avg Lift</p>
+      </div>
+    </div>
+  );
+}
+
+function BeforeAfterCard({ data }: { data: unknown }) {
+  if (!data) return null;
+  const ba = data as { before: { avg: number; count: number }; after: { avg: number; count: number } };
+  const improvement = (ba.after?.avg || 0) - (ba.before?.avg || 0);
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="p-3 rounded-lg bg-muted/50 text-center">
+        <p className="text-xs text-muted-foreground mb-1">Before Learning</p>
+        <p className="text-xl font-bold">{ba.before?.avg ? ba.before.avg.toFixed(1) : '—'}</p>
+        <p className="text-[10px] text-muted-foreground">{ba.before?.count || 0} rated</p>
+      </div>
+      <div className="p-3 rounded-lg bg-muted/50 text-center">
+        <p className="text-xs text-muted-foreground mb-1">After Learning</p>
+        <p className={`text-xl font-bold ${improvement > 0 ? 'text-green-600' : improvement < 0 ? 'text-destructive' : ''}`}>
+          {ba.after?.avg ? ba.after.avg.toFixed(1) : '—'}
+        </p>
+        <p className="text-[10px] text-muted-foreground">{ba.after?.count || 0} rated</p>
+      </div>
+    </div>
+  );
+}
+
 interface FeedbackStats {
   stats: { total_generations: string; rated: string; avg_rating: string; favorites: string; regenerated: string };
   byJewelry: { jewelry_type: string; count: string; avg_rating: string }[];
@@ -19,11 +65,16 @@ export default function LearnPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExtracting, setIsExtracting] = useState(false);
   const [lastExtraction, setLastExtraction] = useState<{ patterns: number; fragments: number } | null>(null);
+  const [impact, setImpact] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     fetch('/api/feedback').then(r => r.json()).then(json => {
       if (json.success) setStats(json.data);
     }).finally(() => setIsLoading(false));
+
+    fetch('/api/learn/impact').then(r => r.json()).then(json => {
+      if (json.success) setImpact(json.data);
+    });
   }, []);
 
   const extractPatterns = useCallback(async () => {
@@ -176,6 +227,88 @@ export default function LearnPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Learning Impact Section */}
+      {impact && (
+        <>
+          <Card className="border-gold/20 bg-gold/[0.02]">
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4 text-gold" /> Prompt Agent Impact</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              {/* Before vs After patterns */}
+              <BeforeAfterCard data={(impact as Record<string, unknown>).beforeAfter} />
+
+              {/* Summary stats */}
+              <SummaryStats data={(impact as Record<string, unknown>).summary} />
+            </CardContent>
+          </Card>
+
+          {/* Learned fragments */}
+          {((impact as Record<string, unknown>).fragments as unknown[])?.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4 text-gold" /> Learned Prompt Rules</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {((impact as Record<string, unknown>).fragments as { fragment_text: string; category: string; lift: string; times_used: number }[]).slice(0, 10).map((f, i) => (
+                    <div key={i} className="flex items-start justify-between py-2 border-b last:border-0">
+                      <div>
+                        <p className="text-xs">{f.fragment_text}</p>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground mt-1 inline-block">{f.category}</span>
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <p className={`text-xs font-medium ${parseFloat(f.lift) > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                          {parseFloat(f.lift) > 0 ? '+' : ''}{(parseFloat(f.lift) * 100).toFixed(0)}% lift
+                        </p>
+                        <p className="text-[9px] text-muted-foreground">{f.times_used}x used</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Known issues */}
+          {((impact as Record<string, unknown>).patterns as unknown[])?.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /> Known Issues & Fixes</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {((impact as Record<string, unknown>).patterns as { pattern_type: string; description: string; evidence_count: number; suggested_prompt_change: string; is_applied: boolean }[]).slice(0, 10).map((p, i) => (
+                    <div key={i} className="py-2 border-b last:border-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded ${p.is_applied ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {p.is_applied ? 'Applied' : p.pattern_type}
+                        </span>
+                        <p className="text-xs">{p.description}</p>
+                        <span className="text-[9px] text-muted-foreground shrink-0">{p.evidence_count}x reported</span>
+                      </div>
+                      {p.suggested_prompt_change && (
+                        <p className="text-[10px] text-muted-foreground mt-1 pl-2 border-l-2 border-gold/30">Fix: {p.suggested_prompt_change}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Top issues by tag */}
+          {((impact as Record<string, unknown>).issuesByTag as unknown[])?.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Top Reported Issues</CardTitle></CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {((impact as Record<string, unknown>).issuesByTag as { tag: string; count: string }[]).map((t, i) => (
+                    <span key={i} className="text-xs px-3 py-1.5 rounded-full border bg-card">
+                      {t.tag} <span className="text-muted-foreground ml-1">({t.count})</span>
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {totalGens === 0 && (
