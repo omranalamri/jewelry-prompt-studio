@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gem, Upload, Loader2, Download, RefreshCw, RotateCcw, Sparkles } from 'lucide-react';
+import { Gem, Upload, Loader2, Download, RefreshCw, RotateCcw, Sparkles, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -161,10 +161,49 @@ export default function TryOnPage() {
           </div>
 
           {/* Generate */}
-          <Button onClick={generate} disabled={isLoading || !imageUrl}
-            className="w-full gold-gradient text-white border-0 hover:opacity-90 h-12 shadow-md">
-            {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="h-4 w-4 mr-2" /> Generate Try-On</>}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={generate} disabled={isLoading || !imageUrl}
+              className="flex-1 gold-gradient text-white border-0 hover:opacity-90 h-12 shadow-md">
+              {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="h-4 w-4 mr-2" /> Try-On</>}
+            </Button>
+            <Button variant="outline" disabled={isLoading || !imageUrl} className="h-12 px-4"
+              onClick={async () => {
+                if (!imageUrl) return;
+                setIsLoading(true);
+                try {
+                  const res = await fetch('/api/rotate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jewelryImageUrl: imageUrl, jewelryType, background: 'dark', duration: 5 }),
+                  });
+                  const json = await res.json();
+                  if (json.success) {
+                    toast.success(`360° rotation generating (${json.data.cost})...`);
+                    // Poll for completion
+                    const pollId = json.data.id;
+                    const poll = setInterval(async () => {
+                      const statusRes = await fetch(`/api/generate/status?id=${pollId}&provider=replicate`);
+                      const statusJson = await statusRes.json();
+                      if (statusJson.success && statusJson.data.status === 'completed') {
+                        clearInterval(poll);
+                        setResults(prev => [statusJson.data.resultUrl, ...prev]);
+                        toast.success('360° rotation ready!');
+                        setIsLoading(false);
+                      } else if (statusJson.data?.status === 'failed') {
+                        clearInterval(poll);
+                        toast.error('Rotation failed');
+                        setIsLoading(false);
+                      }
+                    }, 5000);
+                  } else {
+                    toast.error(json.error);
+                    setIsLoading(false);
+                  }
+                } catch { toast.error('Rotation failed'); setIsLoading(false); }
+              }}>
+              <RotateCw className="h-4 w-4 mr-2" /> 360°
+            </Button>
+          </div>
         </div>
 
         {/* Right: Results */}
