@@ -9,6 +9,18 @@ function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
 }
 
+// When we have a reference image, we TRANSFORM it — not recreate from scratch.
+// The jewelry piece must stay IDENTICAL. Only the environment changes.
+function buildTransformPrompt(prompt: string, hasReference: boolean): string {
+  if (!hasReference) return prompt;
+
+  return `IMPORTANT: Keep the jewelry piece from the reference image EXACTLY as it is — same design, same shape, same engravings, same text, same stones, same metal color. Do NOT recreate or reimagine the jewelry piece. Only change the styling around it.
+
+Apply these creative changes to the scene while preserving the exact jewelry piece: ${prompt}
+
+The jewelry must be pixel-accurate to the reference — if it has letters, keep the exact letters. If it has a specific shape, keep that exact shape. Only transform the lighting, background, composition, and styling.`;
+}
+
 async function runModel(
   replicate: Replicate,
   modelInfo: ModelInfo,
@@ -16,6 +28,9 @@ async function runModel(
   ar: string,
   referenceImageUrl?: string
 ): Promise<string> {
+  const hasRef = !!referenceImageUrl;
+  const transformPrompt = buildTransformPrompt(cleanPrompt, hasRef);
+
   if (modelInfo.id === 'recraft-v3') {
     if (!process.env.RECRAFT_API_TOKEN) throw new Error('not configured');
     const response = await fetch('https://external.api.recraft.ai/v1/images/generations', {
@@ -25,7 +40,7 @@ async function runModel(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt: cleanPrompt,
+        prompt: transformPrompt,
         style: 'realistic_image',
         size: ar === '9:16' ? '1024x1820' : ar === '1:1' ? '1024x1024' : '1365x1024',
       }),
@@ -40,11 +55,12 @@ async function runModel(
   if (modelInfo.id === 'flux-ultra') {
     const output = await replicate.run('black-forest-labs/flux-1.1-pro-ultra', {
       input: {
-        prompt: cleanPrompt,
+        prompt: transformPrompt,
         aspect_ratio: ar,
         raw: true,
         output_format: 'jpg',
-        ...(referenceImageUrl && { image_prompt: referenceImageUrl, image_prompt_strength: 0.35 }),
+        // HIGH reference strength when we have a reference — 70% image, 30% prompt
+        ...(hasRef && { image_prompt: referenceImageUrl, image_prompt_strength: 0.7 }),
       },
     });
     return typeof output === 'string' ? output : String(output);
@@ -52,22 +68,23 @@ async function runModel(
 
   if (modelInfo.id === 'ideogram-v2') {
     const output = await replicate.run('ideogram-ai/ideogram-v2', {
-      input: { prompt: cleanPrompt, aspect_ratio: ar },
+      input: { prompt: transformPrompt, aspect_ratio: ar },
     });
     return Array.isArray(output) ? String(output[0]) : String(output);
   }
 
-  // Nano Banana 2 and Pro
+  // Nano Banana 2 and Pro — best for image transformation with reference
   const output = await replicate.run(modelInfo.replicateId as `${string}/${string}`, {
     input: {
-      prompt: referenceImageUrl
-        ? `Recreate the exact pose, composition, camera angle, and lighting from the reference image, but with: ${cleanPrompt}`
+      prompt: hasRef
+        ? `Transform this jewelry photo: keep the EXACT jewelry piece unchanged (same design, shape, text, engravings, stones), but apply new creative styling: ${cleanPrompt}`
         : cleanPrompt,
       resolution: modelInfo.id === 'nano-banana-pro' ? '2K' : '1K',
       aspect_ratio: ar,
       output_format: 'jpg',
       ...(modelInfo.id === 'nano-banana-pro' && { safety_filter_level: 'block_only_high' }),
-      ...(referenceImageUrl && { image_input: [referenceImageUrl] }),
+      // Pass the reference as image input — Nano Banana uses this to preserve the piece
+      ...(hasRef && { image_input: [referenceImageUrl] }),
     },
   });
   return Array.isArray(output) ? String(output[0]) : String(output);
@@ -90,13 +107,11 @@ export async function POST(req: NextRequest) {
     const arMatch = prompt.match(/--ar\s+(\d+:\d+)/);
     const ar = arMatch ? arMatch[1] : (aspectRatio || '1:1');
 
-    // Build chain: requested model first, then remaining by quality
     const requested = requestedModelId ? getImageModel(requestedModelId) : getBestImageModel();
     const chain = requested
       ? [requested, ...IMAGE_MODELS.filter(m => m.id !== requested.id)]
       : IMAGE_MODELS;
 
-    // Try each model — smooth fallback, report which one delivered
     for (const modelInfo of chain) {
       try {
         const startTime = Date.now();
@@ -124,17 +139,17 @@ export async function POST(req: NextRequest) {
             timeSeconds: parseFloat(elapsed.toFixed(1)),
             resolution: modelInfo.resolution,
             quality: modelInfo.quality,
-            // Let the UI know if we fell back
             requestedModel: requestedModelId || chain[0].id,
             wasFirstChoice: modelInfo.id === (requestedModelId || chain[0].id),
+            hadReference: !!referenceImageUrl,
           },
         });
       } catch {
-        continue; // silently try next
+        continue;
       }
     }
 
-    return errorResponse('GENERATION_FAILED', 'All models are currently unavailable. Please try again in a moment.', 500);
+    return errorResponse('GENERATION_FAILED', 'All models are currently unavailable. Please try again.', 500);
   } catch (error) {
     console.error('Image generation error:', error);
     return errorResponse('GENERATION_FAILED', 'Image generation failed.', 500);

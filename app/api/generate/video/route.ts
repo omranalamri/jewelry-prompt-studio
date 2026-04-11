@@ -22,7 +22,7 @@ async function generateCreativeFrame(
     const output = await replicate.run('google/nano-banana-pro', {
       input: {
         prompt: referenceImageUrl
-          ? `Create a production-ready still frame for a luxury jewelry video. Use the reference image to match the exact jewelry piece (metal, stones, design details), but apply this creative direction: ${prompt}`
+          ? `Transform this jewelry photo into a production-ready video still frame. Keep the EXACT jewelry piece unchanged — same design, shape, text, engravings, stones, metal. Only change the styling: ${prompt}`
           : `Create a production-ready still frame for a luxury jewelry video: ${prompt}`,
         resolution: '2K',
         aspect_ratio: aspectRatio,
@@ -39,11 +39,11 @@ async function generateCreativeFrame(
     try {
       const output = await replicate.run('black-forest-labs/flux-1.1-pro-ultra', {
         input: {
-          prompt,
+          prompt: `Keep the exact jewelry piece from the reference, only change the styling: ${prompt}`,
           aspect_ratio: aspectRatio,
           raw: true,
           output_format: 'jpg',
-          ...(referenceImageUrl && { image_prompt: referenceImageUrl, image_prompt_strength: 0.3 }),
+          ...(referenceImageUrl && { image_prompt: referenceImageUrl, image_prompt_strength: 0.7 }),
         },
       });
       return typeof output === 'string' ? output : String(output);

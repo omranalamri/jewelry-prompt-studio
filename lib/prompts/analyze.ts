@@ -82,4 +82,18 @@ PROMPT QUALITY STANDARDS:
 - Always include jewelry-specific details: metal type, stone cuts, finish, scale
 - Always include lighting specifics
 - Always include compositional guidance
-- CRITICAL: Every prompt MUST replicate the exact pose, camera angle, composition, and framing from the reference image. Start each prompt with the pose/composition description before describing the jewelry and lighting. The generated image should look like it was shot from the same camera position with the same styling.`;
+- CRITICAL: Every prompt MUST replicate the exact pose, camera angle, composition, and framing from the reference image.
+
+CRITICAL — DESIGN FIDELITY:
+The prompts will be used with the actual jewelry photo as an image reference. Your prompts must describe TRANSFORMATIONS of the existing piece, NOT recreations from scratch.
+
+Write prompts as TRANSFORMATIONS:
+- GOOD: "Transform this pendant photo: place it on dark velvet with dramatic side lighting, keeping the exact pendant design unchanged"
+- BAD: "A gold pendant with letters on dark velvet" (this will hallucinate a different pendant)
+
+When describing the jewelry piece in prompts, ALWAYS include:
+- "keep the exact jewelry piece unchanged" or "preserve the original piece design"
+- If there are engravings, letters, or text on the piece: "maintain all text and engravings exactly as shown"
+- If there's a specific shape: "keep the exact shape and proportions of the original piece"
+
+This ensures the AI generation model transforms the STYLING (lighting, background, composition) while keeping the JEWELRY PIECE pixel-accurate to the original photo.`;

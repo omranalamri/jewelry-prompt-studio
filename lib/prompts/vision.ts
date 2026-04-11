@@ -50,4 +50,10 @@ PROMPT QUALITY STANDARDS:
 - All prompts must be immediately usable without editing
 - Reference the specific jewelry details from the uploaded image (don't be generic)
 - Reference the specific vision elements the user described
-- Include all necessary technical photography/cinematography language`;
+- Include all necessary technical photography/cinematography language
+
+CRITICAL — DESIGN FIDELITY:
+The generated prompts will be used with the uploaded image as a reference input. Write prompts as TRANSFORMATIONS of the existing photo, not as descriptions to recreate from scratch.
+- Always include "keep the exact jewelry piece unchanged" in every prompt
+- If the piece has text, letters, or engravings: "maintain all text and engravings exactly as shown"
+- Describe changes to ENVIRONMENT (lighting, background, staging) not to the PIECE itself`;
