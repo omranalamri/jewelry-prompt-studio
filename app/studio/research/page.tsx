@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Telescope, ExternalLink, Lightbulb, Database, Wrench, BookOpen, Workflow, Eye, ArrowUpRight } from 'lucide-react';
+import { Telescope, ExternalLink, Lightbulb, Database, Wrench, BookOpen, Workflow, Eye, ArrowUpRight, FlaskConical, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { COMMUNITY_RESOURCES, CommunityResource } from '@/lib/creative/community-intel';
 
@@ -12,6 +13,8 @@ const CATEGORY_CONFIG: Record<string, { label: string; icon: typeof Lightbulb; c
   tool: { label: 'Tools', icon: Wrench, color: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-300' },
   research: { label: 'Research', icon: BookOpen, color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300' },
   workflow: { label: 'Workflows', icon: Workflow, color: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/30 dark:text-cyan-300' },
+  lora: { label: 'LoRA/Fine-Tune', icon: FlaskConical, color: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300' },
+  technique: { label: 'Techniques', icon: Link2, color: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300' },
   competitor: { label: 'Competitors', icon: Eye, color: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300' },
 };
 
@@ -44,15 +47,35 @@ function ResourceCard({ resource }: { resource: CommunityResource }) {
               <p className="text-xs text-muted-foreground leading-relaxed">{resource.description}</p>
               <div className="mt-2 p-2 rounded-lg bg-gold/5 border border-gold/10">
                 <p className="text-xs"><span className="font-medium text-gold-dark dark:text-gold-light">Why this matters:</span> {resource.impactReason}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Effort: <span className={`font-medium ${resource.effort === 'easy' ? 'text-green-600' : resource.effort === 'medium' ? 'text-amber-600' : 'text-red-600'}`}>{resource.effort}</span></p>
               </div>
               <div className="flex gap-1.5 mt-2 flex-wrap">
                 {resource.tags.map(t => <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{t}</span>)}
               </div>
             </div>
-            <a href={resource.url} target="_blank" rel="noopener noreferrer"
-              className="shrink-0 h-8 w-8 rounded-lg border flex items-center justify-center hover:bg-accent transition-colors">
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </a>
+            <div className="flex flex-col gap-1.5 shrink-0">
+              <a href={resource.url} target="_blank" rel="noopener noreferrer"
+                className="h-8 w-8 rounded-lg border flex items-center justify-center hover:bg-accent transition-colors">
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </a>
+              {resource.status !== 'integrated' && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/safeguards', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'approve-resource', data: { resourceId: resource.id, notes: resource.name } }),
+                      });
+                      toast.success(`"${resource.name}" approved for integration`);
+                    } catch { toast.error('Failed'); }
+                  }}
+                  className="text-[9px] px-2 py-1 rounded border border-green-300 text-green-700 hover:bg-green-50 transition-colors dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950/30"
+                >
+                  Approve
+                </button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
