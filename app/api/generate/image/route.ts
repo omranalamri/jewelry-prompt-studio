@@ -55,6 +55,21 @@ async function runModel(
     return url;
   }
 
+  if (modelInfo.id === 'ideogram-v3') {
+    const output = await replicate.run('ideogram-ai/ideogram-v3-quality', {
+      input: { prompt: transformPrompt, aspect_ratio: ar },
+    });
+    return Array.isArray(output) ? String(output[0]) : String(output);
+  }
+
+  if (modelInfo.id === 'flux-fill-pro') {
+    // Inpainting model — needs a mask. For now use as standard gen.
+    const output = await replicate.run('black-forest-labs/flux-fill-pro', {
+      input: { prompt: transformPrompt, image: referenceImageUrl || '', output_format: 'jpg' },
+    });
+    return typeof output === 'string' ? output : String(output);
+  }
+
   if (modelInfo.id === 'flux-ultra') {
     const output = await replicate.run('black-forest-labs/flux-1.1-pro-ultra', {
       input: {

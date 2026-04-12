@@ -19,20 +19,18 @@ interface GenerateButtonProps {
 const isVideoPlatform = (p: PlatformId) => p === 'runway' || p === 'kling';
 
 const IMAGE_MODEL_OPTIONS = [
-  { id: 'nano-banana-pro', name: 'Nano Banana Pro', badge: 'Best Quality', cost: '$0.13', quality: 10 },
-  { id: 'flux-ultra', name: 'Flux Ultra', badge: 'Lifestyle Only', cost: '$0.06', quality: 7 },
-  { id: 'nano-banana-2', name: 'Nano Banana 2', badge: 'Fast + Consistent', cost: '$0.05', quality: 9 },
-  { id: 'recraft-v3', name: 'Recraft V3', badge: 'Product Photography', cost: '$0.04', quality: 8 },
-  { id: 'ideogram-v2', name: 'Ideogram V2', badge: 'Text + Detail', cost: '$0.08', quality: 8 },
+  { id: 'ideogram-v3', name: 'Ideogram V3', badge: 'Best Quality', cost: '$0.08', quality: 10 },
+  { id: 'nano-banana-pro', name: 'Nano Banana Pro', badge: 'Reference Input', cost: '$0.13', quality: 9 },
+  { id: 'recraft-v3', name: 'Recraft V3', badge: 'Fast + Cheap', cost: '$0.04', quality: 8 },
+  { id: 'flux-fill-pro', name: 'Flux Fill Pro', badge: 'Inpaint/Try-On', cost: '$0.05', quality: 9 },
+  { id: 'nano-banana-2', name: 'Nano Banana 2', badge: 'Consistent', cost: '$0.05', quality: 8 },
 ];
 
 const VIDEO_MODEL_OPTIONS = [
   { id: 'kling-2.5', name: 'Kling 2.5 Pro', badge: 'Best Motion', cost: '$0.35', quality: 10 },
   { id: 'veo-3', name: 'Google Veo 3', badge: 'Cinema + Audio', cost: '$1.25', quality: 10 },
-  { id: 'seedance-2', name: 'Seedance 2.0', badge: 'Fast + Multimodal', cost: '$0.30', quality: 9 },
+  { id: 'seedance-2', name: 'Seedance 2.0', badge: 'Fast + Multi', cost: '$0.30', quality: 9 },
   { id: 'runway', name: 'Runway Gen-3', badge: 'Design Accurate', cost: '$0.25', quality: 9 },
-  { id: 'seedance', name: 'Seedance 1.5', badge: 'Audio + Reference', cost: '$0.40', quality: 9 },
-  { id: 'veo-2', name: 'Google Veo 2', badge: 'Reliable', cost: '$0.50', quality: 9 },
 ];
 
 export function GenerateButton({ prompt, platform, referenceImageUrl, compact }: GenerateButtonProps) {
