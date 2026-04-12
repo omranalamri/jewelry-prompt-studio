@@ -4,7 +4,7 @@ import { IMAGE_MODELS, getImageModel, getBestImageModel, formatCost, ModelInfo }
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
 import { trackGeneration } from '@/lib/learning/generation-tracker';
-import { validatePrompt } from '@/lib/jewelry/validation';
+import { validatePromptWithLearned as validatePrompt } from '@/lib/jewelry/validation';
 
 export const maxDuration = 120;
 

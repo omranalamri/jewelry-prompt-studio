@@ -91,3 +91,45 @@ export function analyzePromptBalance(prompt: string): {
 
   return { subjectPct, envPct, cameraPct, isBalanced, suggestion };
 }
+
+// Self-review learned rules (committed from self-review cycle)
+const LEARNED_RULES: ValidationRule[] = [
+  {
+    id: 'generic-stone',
+    pattern: /\b(sparkl(e|ing)|shiny|glitter(ing|y))\s+(stone|gem|diamond|ruby|sapphire|emerald)/gi,
+    issue: 'Generic stone description — use specific optical properties instead',
+    fix: 'gemstone with natural fire, brilliant scintillation, multi-faceted reflections, and depth',
+    replacement: '$4 with natural fire and scintillation',
+  },
+  {
+    id: 'flat-transform',
+    pattern: /^Transform this jewelry/,
+    issue: 'Missing design fidelity emphasis',
+    fix: 'Add strict design preservation language',
+    replacement: 'Transform this jewelry photo: STRICTLY maintain the exact original jewelry design, proportions, stone arrangement, and metal details. Only change the styling:',
+  },
+];
+
+// Re-export with learned rules included
+export function validatePromptWithLearned(prompt: string): ValidationResult {
+  const base = validatePrompt(prompt);
+  let corrected = base.correctedPrompt;
+  let count = base.correctionCount;
+  const issues = [...base.issues];
+
+  for (const rule of LEARNED_RULES) {
+    rule.pattern.lastIndex = 0;
+    const match = rule.pattern.exec(corrected);
+    if (match) {
+      issues.push({ ruleId: rule.id, issue: rule.issue, fix: rule.fix, position: match.index });
+      if (rule.replacement) {
+        rule.pattern.lastIndex = 0;
+        corrected = corrected.replace(rule.pattern, rule.replacement);
+        count++;
+      }
+    }
+    rule.pattern.lastIndex = 0;
+  }
+
+  return { isValid: issues.length === 0, issues, correctedPrompt: corrected, correctionCount: count };
+}
