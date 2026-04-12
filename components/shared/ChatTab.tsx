@@ -140,16 +140,17 @@ export function ChatTab({
           const res = await fetch('/api/upload', { method: 'POST', body: fd });
           const json = await res.json();
           if (json.success) {
-            setReferenceImageUrl(json.url);
+            // Use the Replicate URL for AI models (Blob URLs are blocked by external services)
+            const aiUrl = json.replicateUrl || json.url;
+            setReferenceImageUrl(aiUrl);
 
             // Auto-remove background for cleaner generation
             fetch('/api/remove-bg', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ imageUrl: json.url }),
+              body: JSON.stringify({ imageUrl: aiUrl }),
             }).then(r => r.json()).then(bgJson => {
               if (bgJson.success && bgJson.data?.resultUrl) {
-                // Use the isolated version as the reference for generation
                 setReferenceImageUrl(bgJson.data.resultUrl);
               }
             }).catch(() => { /* keep original if bg removal fails */ });

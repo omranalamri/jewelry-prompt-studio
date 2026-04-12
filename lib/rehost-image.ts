@@ -13,7 +13,7 @@ const cache = new Map<string, string>();
 
 export async function rehostForReplicate(url: string): Promise<string | undefined> {
   // Already a Replicate URL — use as-is
-  if (url.includes('replicate.delivery') || url.includes('api.replicate.com')) return url;
+  if (url.includes('replicate.delivery') || url.includes('api.replicate.com') || url.includes('/v1/files/')) return url;
 
   // Check cache
   const cached = cache.get(url);

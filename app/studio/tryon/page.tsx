@@ -45,7 +45,7 @@ export default function TryOnPage() {
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: fd });
       const json = await res.json();
-      if (json.success) setImageUrl(json.url);
+      if (json.success) setImageUrl(json.replicateUrl || json.url);
     } catch { toast.error('Upload failed'); }
   }, []);
 

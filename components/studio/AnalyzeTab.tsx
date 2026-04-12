@@ -112,11 +112,11 @@ export function AnalyzeTab() {
           const res = await fetch('/api/upload', { method: 'POST', body: fd });
           const json = await res.json();
           if (json.success) {
-            setReferenceImageUrl(json.url);
-            // Auto background removal for cleaner generation
+            const aiUrl = json.replicateUrl || json.url;
+            setReferenceImageUrl(aiUrl);
             fetch('/api/remove-bg', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ imageUrl: json.url }),
+              body: JSON.stringify({ imageUrl: aiUrl }),
             }).then(r => r.json()).then(bgJson => {
               if (bgJson.success && bgJson.data?.resultUrl) setReferenceImageUrl(bgJson.data.resultUrl);
             }).catch(() => {});
