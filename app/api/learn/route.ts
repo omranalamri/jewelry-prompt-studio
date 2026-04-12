@@ -110,8 +110,19 @@ Respond as JSON:
       fragmentsInserted++;
     }
 
+    // Mark high-evidence patterns as applied (they're auto-injected via prompt builder)
+    await sql`UPDATE feedback_patterns SET is_applied = true WHERE evidence_count >= 3 AND is_applied = false`;
+
+    // Log which patterns were committed
+    const appliedPatterns = await sql`SELECT description FROM feedback_patterns WHERE is_applied = true AND evidence_count >= 3`;
+
     // Refresh combo performance
     await refreshComboPerformance();
+
+    // Log the commit
+    await sql`INSERT INTO system_changelog (change_type, description, details)
+      VALUES ('patterns-committed', ${`Committed ${appliedPatterns.length} patterns to prompt system. ${fragmentsInserted} new fragments active.`}, ${JSON.stringify({ appliedCount: appliedPatterns.length, newFragments: fragmentsInserted })})`;
+
 
     return Response.json({
       success: true,

@@ -64,7 +64,9 @@ export default function LearnPage() {
   const [stats, setStats] = useState<FeedbackStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isReviewing, setIsReviewing] = useState(false);
   const [lastExtraction, setLastExtraction] = useState<{ patterns: number; fragments: number } | null>(null);
+  const [selfReview, setSelfReview] = useState<{ avgRating: number; reviewed: number; overallAssessment: string; reviews: { rating: number; comment: string }[]; promptImprovements: { current: string; suggested: string }[] } | null>(null);
   const [impact, setImpact] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
@@ -134,25 +136,93 @@ export default function LearnPage() {
         </CardContent></Card>
       </div>
 
+      {/* Self-Review — AI analyzes its own work */}
+      <Card className="border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/10">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium flex items-center gap-2"><Star className="h-4 w-4 text-blue-500" /> Self-Review</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                AI critically reviews its own generated images, rates them honestly, and identifies what to improve.
+              </p>
+              {selfReview && (
+                <p className="text-sm text-blue-600 mt-1">
+                  Reviewed {selfReview.reviewed} images. Self-rating: {selfReview.avgRating.toFixed(1)}/5
+                </p>
+              )}
+            </div>
+            <Button onClick={async () => {
+              setIsReviewing(true);
+              try {
+                const res = await fetch('/api/self-review', { method: 'POST' });
+                const json = await res.json();
+                if (json.success && json.data.reviewed > 0) {
+                  setSelfReview(json.data);
+                  toast.success(json.data.message);
+                  // Refresh stats
+                  fetch('/api/feedback').then(r => r.json()).then(j => { if (j.success) setStats(j.data); });
+                  fetch('/api/learn/impact').then(r => r.json()).then(j => { if (j.success) setImpact(j.data); });
+                } else {
+                  toast.info(json.data?.message || 'Nothing to review');
+                }
+              } catch { toast.error('Review failed'); }
+              finally { setIsReviewing(false); }
+            }} disabled={isReviewing}
+              variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+              {isReviewing ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Reviewing...</> : <><Star className="h-4 w-4 mr-2" /> Self-Review</>}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Self-review results */}
+      {selfReview && selfReview.reviews && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Self-Review Results ({selfReview.avgRating.toFixed(1)}/5 avg)</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground italic">{selfReview.overallAssessment}</p>
+            {selfReview.reviews.slice(0, 8).map((r, i) => (
+              <div key={i} className="flex items-start gap-3 py-2 border-b last:border-0">
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {[1, 2, 3, 4, 5].map(s => <span key={s} className={`text-xs ${s <= r.rating ? 'text-gold' : 'text-muted-foreground/20'}`}>★</span>)}
+                </div>
+                <p className="text-xs text-muted-foreground">{r.comment}</p>
+              </div>
+            ))}
+            {selfReview.promptImprovements && selfReview.promptImprovements.length > 0 && (
+              <div className="mt-3 p-3 rounded-lg bg-gold/5 border border-gold/20">
+                <p className="text-xs font-medium mb-2">Prompt Improvements Identified:</p>
+                {selfReview.promptImprovements.map((imp, i) => (
+                  <div key={i} className="text-xs mb-2">
+                    <p className="text-muted-foreground"><span className="text-destructive">Current:</span> {imp.current}</p>
+                    <p><span className="text-green-600">Suggested:</span> {imp.suggested}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Extract patterns button */}
       <Card className="border-gold/20 bg-gold/[0.02]">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium flex items-center gap-2"><Brain className="h-4 w-4 text-gold" /> Pattern Extraction</h3>
+              <h3 className="font-medium flex items-center gap-2"><Brain className="h-4 w-4 text-gold" /> Extract Patterns &amp; Commit</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Claude analyzes all your rated generations to find what works and what doesn&apos;t.
-                {rated < 5 ? ` Need ${5 - rated} more ratings to start.` : ' Ready to extract.'}
+                Analyzes all ratings (yours + AI self-review), extracts patterns, and <span className="font-medium text-gold-dark dark:text-gold-light">commits improvements to the prompt system</span>.
+                {rated < 5 ? ` Need ${5 - rated} more ratings.` : ' Ready to extract and commit.'}
               </p>
               {lastExtraction && (
                 <p className="text-sm text-gold mt-1">
-                  Last run: {lastExtraction.patterns} patterns, {lastExtraction.fragments} prompt fragments found.
+                  Last run: {lastExtraction.patterns} patterns committed, {lastExtraction.fragments} fragments active.
                 </p>
               )}
             </div>
             <Button onClick={extractPatterns} disabled={isExtracting || rated < 5}
               className="gold-gradient text-white border-0 hover:opacity-90">
-              {isExtracting ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Analyzing...</> : <><Brain className="h-4 w-4 mr-2" /> Extract Patterns</>}
+              {isExtracting ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Committing...</> : <><Brain className="h-4 w-4 mr-2" /> Extract &amp; Commit</>}
             </Button>
           </div>
         </CardContent>
