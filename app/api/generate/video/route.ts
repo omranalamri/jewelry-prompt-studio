@@ -51,6 +51,22 @@ async function generateCreativeFrame(
       });
       return typeof output === 'string' ? output : String(output);
     } catch {
+      // Third fallback: Recraft (own API, not Replicate)
+      if (process.env.RECRAFT_API_TOKEN) {
+        try {
+          const response = await fetch('https://external.api.recraft.ai/v1/images/generations', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${process.env.RECRAFT_API_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: `Professional jewelry video still frame: ${prompt}`, style: 'realistic_image', size: '1365x1024' }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            return data.data?.[0]?.url || null;
+          }
+        } catch { /* */ }
+      }
+      // Fourth fallback: use the reference image directly as the frame
+      if (referenceImageUrl) return referenceImageUrl;
       return null;
     }
   }
