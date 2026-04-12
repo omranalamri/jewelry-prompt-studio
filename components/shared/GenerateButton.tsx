@@ -19,17 +19,13 @@ interface GenerateButtonProps {
 const isVideoPlatform = (p: PlatformId) => p === 'runway' || p === 'kling';
 
 const IMAGE_MODEL_OPTIONS = [
-  { id: 'nano-banana-2', name: 'Nano Banana 2', badge: 'Best Fidelity', cost: '$0.05', quality: 10 },
-  { id: 'ideogram-v3', name: 'Ideogram V3', badge: 'Best Quality', cost: '$0.08', quality: 10 },
-  { id: 'flux-canny', name: 'Flux Canny', badge: 'Edge Preserve', cost: '$0.05', quality: 9 },
-  { id: 'nano-banana-pro', name: 'NB Pro', badge: 'Reference 2K', cost: '$0.13', quality: 9 },
-  { id: 'recraft-v3', name: 'Recraft V3', badge: 'Fast Fallback', cost: '$0.04', quality: 8 },
+  { id: 'nano-banana-2', name: 'Nano Banana 2', badge: 'Primary', cost: '$0.05', quality: 10 },
+  { id: 'nano-banana-pro', name: 'NB Pro (2K)', badge: 'High-Res', cost: '$0.13', quality: 9 },
 ];
 
 const VIDEO_MODEL_OPTIONS = [
-  { id: 'kling-2.5', name: 'Kling 2.5 Pro', badge: 'Best Motion', cost: '$0.35', quality: 10 },
-  { id: 'veo-3', name: 'Google Veo 3', badge: 'Cinema + Audio', cost: '$1.25', quality: 10 },
-  { id: 'seedance-2', name: 'Seedance 2.0', badge: 'Fast + Multi', cost: '$0.30', quality: 9 },
+  { id: 'kling-2.5', name: 'Kling 2.5', badge: 'Primary', cost: '$0.35', quality: 10 },
+  { id: 'seedance-2', name: 'Seedance 2.0', badge: 'Multimodal', cost: '$0.30', quality: 9 },
   { id: 'runway', name: 'Runway Gen-3', badge: 'Design Accurate', cost: '$0.25', quality: 9 },
 ];
 

@@ -1,5 +1,6 @@
-// Model Registry — ranked by REAL performance data + benchmark research
-// Last updated: April 2026 based on 132 tracked generations + self-review
+// Model Registry — STRIPPED DOWN
+// Only models that actually work for jewelry. No fallbacks to bad models.
+// If the model is down, tell the user to try again. Don't produce garbage.
 
 export interface ModelInfo {
   id: string;
@@ -15,12 +16,9 @@ export interface ModelInfo {
   badge: string;
   avgTimeSeconds: number;
   supportsImageInput: boolean;
-  retired?: boolean;
-  retiredReason?: string;
 }
 
-// IMAGE MODELS — Nano Banana 2 as primary (image_input for design fidelity)
-// Blob URL fix: all images re-hosted via Replicate files API
+// === IMAGE: Nano Banana 2 is primary. Period. ===
 export const IMAGE_MODELS: ModelInfo[] = [
   {
     id: 'nano-banana-2',
@@ -32,24 +30,9 @@ export const IMAGE_MODELS: ModelInfo[] = [
     speed: 7,
     costEstimate: 0.05,
     resolution: '1K',
-    description: 'Google\'s fast model with image_input for design fidelity. Multi-image fusion. Character consistency.',
-    badge: 'Best Fidelity',
+    description: 'Google\'s image model with image_input for design fidelity. Multi-image fusion. The only model that properly preserves jewelry design from reference.',
+    badge: 'Primary',
     avgTimeSeconds: 22,
-    supportsImageInput: true,
-  },
-  {
-    id: 'ideogram-v3',
-    replicateId: 'ideogram-ai/ideogram-v3-quality',
-    name: 'Ideogram V3 Quality',
-    provider: 'Ideogram',
-    type: 'image',
-    quality: 10,
-    speed: 9,
-    costEstimate: 0.08,
-    resolution: '2K',
-    description: 'Highest quality on HuggingFace benchmarks 2026. Best text rendering. Fast and reliable.',
-    badge: 'Best Quality + Text',
-    avgTimeSeconds: 12,
     supportsImageInput: true,
   },
   {
@@ -62,139 +45,14 @@ export const IMAGE_MODELS: ModelInfo[] = [
     speed: 6,
     costEstimate: 0.134,
     resolution: '2K',
-    description: '20M runs. Reference image input. Often at capacity — use as secondary.',
-    badge: 'Reference Input',
-    avgTimeSeconds: 34,
+    description: 'Higher resolution version. 2K output. Use when NB2 is at capacity.',
+    badge: 'Backup (2K)',
+    avgTimeSeconds: 30,
     supportsImageInput: true,
-  },
-  {
-    id: 'recraft-v3',
-    replicateId: 'recraft-ai/recraft-v3',
-    name: 'Recraft V3',
-    provider: 'Recraft',
-    type: 'image',
-    quality: 8,
-    speed: 9,
-    costEstimate: 0.04,
-    resolution: '1K',
-    description: 'Fast, cheap, reliable. Own API (not Replicate). Good fallback.',
-    badge: 'Fast + Cheap',
-    avgTimeSeconds: 7,
-    supportsImageInput: false,
-  },
-  {
-    id: 'flux-fill-pro',
-    replicateId: 'black-forest-labs/flux-fill-pro',
-    name: 'Flux Fill Pro',
-    provider: 'Black Forest Labs',
-    type: 'image',
-    quality: 9,
-    speed: 8,
-    costEstimate: 0.05,
-    resolution: '2K',
-    description: 'Professional inpainting — place jewelry on hands/necks with pixel accuracy via mask.',
-    badge: 'Inpaint + Try-On',
-    avgTimeSeconds: 8,
-    supportsImageInput: true,
-  },
-  {
-    id: 'flux-depth',
-    replicateId: 'black-forest-labs/flux-depth-pro',
-    name: 'Flux Depth Pro',
-    provider: 'Black Forest Labs',
-    type: 'image',
-    quality: 9,
-    speed: 8,
-    costEstimate: 0.05,
-    resolution: '2K',
-    description: 'Depth-guided generation — preserves spatial structure of jewelry while changing style/lighting.',
-    badge: 'Structure Preserve',
-    avgTimeSeconds: 10,
-    supportsImageInput: true,
-  },
-  {
-    id: 'flux-canny',
-    replicateId: 'black-forest-labs/flux-canny-pro',
-    name: 'Flux Canny Pro',
-    provider: 'Black Forest Labs',
-    type: 'image',
-    quality: 9,
-    speed: 8,
-    costEstimate: 0.05,
-    resolution: '2K',
-    description: 'Edge-guided generation — preserves exact outline and shape of jewelry. Best for design fidelity.',
-    badge: 'Edge Preserve',
-    avgTimeSeconds: 10,
-    supportsImageInput: true,
-  },
-  {
-    id: 'flux-redux',
-    replicateId: 'black-forest-labs/flux-redux-schnell',
-    name: 'Flux Redux',
-    provider: 'Black Forest Labs',
-    type: 'image',
-    quality: 8,
-    speed: 9,
-    costEstimate: 0.03,
-    resolution: '1K',
-    description: 'Image variations — creates quality variations preserving identity. Cheapest option.',
-    badge: 'Variations',
-    avgTimeSeconds: 5,
-    supportsImageInput: true,
-  },
-  {
-    id: 'instruct-pix2pix',
-    replicateId: 'timothybrooks/instruct-pix2pix',
-    name: 'Instruct Pix2Pix',
-    provider: 'Timothy Brooks',
-    type: 'image',
-    quality: 7,
-    speed: 7,
-    costEstimate: 0.04,
-    resolution: '1K',
-    description: 'Edit images with text instructions — change lighting/background while keeping the piece.',
-    badge: 'Image Editing',
-    avgTimeSeconds: 15,
-    supportsImageInput: true,
-  },
-  // RETIRED
-  {
-    id: 'ideogram-v2',
-    replicateId: 'ideogram-ai/ideogram-v2',
-    name: 'Ideogram V2',
-    provider: 'Ideogram',
-    type: 'image',
-    quality: 7,
-    speed: 7,
-    costEstimate: 0.08,
-    resolution: '1K',
-    description: 'Replaced by V3 Quality. Kept as emergency fallback only.',
-    badge: 'Legacy',
-    avgTimeSeconds: 20,
-    supportsImageInput: true,
-    retired: true,
-    retiredReason: 'Superseded by Ideogram V3 Quality — same cost, better quality, faster',
-  },
-  {
-    id: 'flux-ultra',
-    replicateId: 'black-forest-labs/flux-1.1-pro-ultra',
-    name: 'Flux 1.1 Pro Ultra',
-    provider: 'Black Forest Labs',
-    type: 'image',
-    quality: 6,
-    speed: 9,
-    costEstimate: 0.06,
-    resolution: '4MP',
-    description: 'RETIRED for jewelry — hallucinate designs. Only for generic lifestyle.',
-    badge: 'Retired (Hallucination)',
-    avgTimeSeconds: 8,
-    supportsImageInput: true,
-    retired: true,
-    retiredReason: 'Consistently hallucinate jewelry designs. Self-review rated 2.2/5. Replaced by Ideogram V3.',
   },
 ];
 
-// VIDEO MODELS
+// === VIDEO: Kling 2.5 primary, Seedance 2.0 backup, Runway for design accuracy ===
 export const VIDEO_MODELS: ModelInfo[] = [
   {
     id: 'kling-2.5',
@@ -206,24 +64,9 @@ export const VIDEO_MODELS: ModelInfo[] = [
     speed: 7,
     costEstimate: 0.35,
     resolution: '1080p',
-    description: 'Best motion quality. Start+end frame control. Great for metallic surfaces.',
-    badge: 'Best Motion',
+    description: 'Best motion quality for jewelry. start_image + end_image + negative_prompt. Great for metallic surfaces.',
+    badge: 'Primary',
     avgTimeSeconds: 45,
-    supportsImageInput: true,
-  },
-  {
-    id: 'veo-3',
-    replicateId: 'google/veo-3',
-    name: 'Google Veo 3',
-    provider: 'Google',
-    type: 'video',
-    quality: 10,
-    speed: 4,
-    costEstimate: 1.25,
-    resolution: '1080p',
-    description: 'Cinema quality with generated audio. Best for ads.',
-    badge: 'Cinema + Audio',
-    avgTimeSeconds: 127,
     supportsImageInput: true,
   },
   {
@@ -236,8 +79,8 @@ export const VIDEO_MODELS: ModelInfo[] = [
     speed: 8,
     costEstimate: 0.30,
     resolution: '1080p',
-    description: 'Multimodal: reference images + audio + video input. Fast.',
-    badge: 'Fast + Multimodal',
+    description: 'Multimodal: reference_images + audio + video. Fast generation.',
+    badge: 'Multimodal',
     avgTimeSeconds: 30,
     supportsImageInput: true,
   },
@@ -251,44 +94,10 @@ export const VIDEO_MODELS: ModelInfo[] = [
     speed: 8,
     costEstimate: 0.25,
     resolution: '720p',
-    description: 'Direct API. Image-to-video preserves design best.',
+    description: 'Direct API. Image-to-video preserves jewelry design best.',
     badge: 'Design Accurate',
     avgTimeSeconds: 30,
     supportsImageInput: true,
-  },
-  {
-    id: 'seedance',
-    replicateId: 'bytedance/seedance-1.5-pro',
-    name: 'Seedance 1.5 Pro',
-    provider: 'ByteDance',
-    type: 'video',
-    quality: 8,
-    speed: 6,
-    costEstimate: 0.40,
-    resolution: '1080p',
-    description: 'Older version. Kept as fallback for 2.0.',
-    badge: 'Legacy',
-    avgTimeSeconds: 60,
-    supportsImageInput: true,
-    retired: true,
-    retiredReason: 'Superseded by Seedance 2.0 Fast — faster, cheaper, multimodal',
-  },
-  {
-    id: 'veo-2',
-    replicateId: 'google/veo-2',
-    name: 'Google Veo 2',
-    provider: 'Google',
-    type: 'video',
-    quality: 8,
-    speed: 7,
-    costEstimate: 0.50,
-    resolution: '1080p',
-    description: 'Older Veo. More expensive than Kling with less control.',
-    badge: 'Legacy',
-    avgTimeSeconds: 31,
-    supportsImageInput: true,
-    retired: true,
-    retiredReason: 'Kling 2.5 is better quality at $0.35 vs $0.50',
   },
 ];
 
@@ -301,19 +110,19 @@ export function getVideoModel(id: string): ModelInfo | undefined {
 }
 
 export function getBestImageModel(): ModelInfo {
-  return IMAGE_MODELS.filter(m => !m.retired)[0];
+  return IMAGE_MODELS[0]; // Nano Banana 2
 }
 
 export function getBestVideoModel(): ModelInfo {
-  return VIDEO_MODELS.filter(m => !m.retired)[0];
+  return VIDEO_MODELS[0]; // Kling 2.5
 }
 
 export function getActiveImageModels(): ModelInfo[] {
-  return IMAGE_MODELS.filter(m => !m.retired);
+  return IMAGE_MODELS;
 }
 
 export function getActiveVideoModels(): ModelInfo[] {
-  return VIDEO_MODELS.filter(m => !m.retired);
+  return VIDEO_MODELS;
 }
 
 export function formatCost(cost: number): string {
@@ -321,16 +130,11 @@ export function formatCost(cost: number): string {
   return `$${cost.toFixed(2)}`;
 }
 
-export function getSmartImageModel(context?: { hasText?: boolean; hasDiamonds?: boolean; isProductShot?: boolean }): ModelInfo {
-  if (!context) return getBestImageModel();
-  if (context.hasText) return IMAGE_MODELS.find(m => m.id === 'ideogram-v3') || getBestImageModel();
-  if (context.isProductShot) return IMAGE_MODELS.find(m => m.id === 'recraft-v3') || getBestImageModel();
-  return getBestImageModel();
+export function getSmartImageModel(): ModelInfo {
+  return IMAGE_MODELS[0]; // Always Nano Banana 2
 }
 
 export function getSmartVideoModel(context?: { needsAudio?: boolean; hasReferenceFrame?: boolean }): ModelInfo {
-  if (!context) return getBestVideoModel();
-  if (context.needsAudio) return VIDEO_MODELS.find(m => m.id === 'veo-3') || getBestVideoModel();
-  if (context.hasReferenceFrame) return VIDEO_MODELS.find(m => m.id === 'runway') || getBestVideoModel();
-  return getBestVideoModel();
+  if (context?.hasReferenceFrame) return VIDEO_MODELS.find(m => m.id === 'runway') || VIDEO_MODELS[0];
+  return VIDEO_MODELS[0]; // Kling 2.5
 }

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import Replicate from 'replicate';
-import { IMAGE_MODELS, getImageModel, getBestImageModel, formatCost, ModelInfo } from '@/lib/creative/model-registry';
+import { IMAGE_MODELS, getImageModel, getBestImageModel, formatCost } from '@/lib/creative/model-registry';
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
 import { trackGeneration } from '@/lib/learning/generation-tracker';
@@ -13,217 +13,98 @@ function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
 }
 
-// When we have a reference image, we TRANSFORM it — not recreate from scratch.
-// The jewelry piece must stay IDENTICAL. Only the environment changes.
-function buildTransformPrompt(prompt: string, hasReference: boolean): string {
-  if (!hasReference) return prompt;
-
-  return `IMPORTANT: Keep the jewelry piece from the reference image EXACTLY as it is — same design, same shape, same engravings, same text, same stones, same metal color. Do NOT recreate or reimagine the jewelry piece. Only change the styling around it.
-
-Apply these creative changes to the scene while preserving the exact jewelry piece: ${prompt}
-
-The jewelry must be pixel-accurate to the reference — if it has letters, keep the exact letters. If it has a specific shape, keep that exact shape. Only transform the lighting, background, composition, and styling.`;
-}
-
-async function runModel(
-  replicate: Replicate,
-  modelInfo: ModelInfo,
-  cleanPrompt: string,
-  ar: string,
-  referenceImageUrl?: string
-): Promise<string> {
-  const hasRef = !!referenceImageUrl;
-  const transformPrompt = buildTransformPrompt(cleanPrompt, hasRef);
-
-  if (modelInfo.id === 'recraft-v3') {
-    if (!process.env.RECRAFT_API_TOKEN) throw new Error('not configured');
-    const response = await fetch('https://external.api.recraft.ai/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RECRAFT_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt: transformPrompt,
-        style: 'realistic_image',
-        size: ar === '9:16' ? '1024x1820' : ar === '1:1' ? '1024x1024' : '1365x1024',
-      }),
-    });
-    if (!response.ok) throw new Error(`${response.status}`);
-    const data = await response.json();
-    const url = data.data?.[0]?.url;
-    if (!url) throw new Error('no image');
-    return url;
-  }
-
-  if (modelInfo.id === 'ideogram-v3') {
-    const output = await replicate.run('ideogram-ai/ideogram-v3-quality', {
-      input: { prompt: transformPrompt, aspect_ratio: ar },
-    });
-    return Array.isArray(output) ? String(output[0]) : String(output);
-  }
-
-  if (modelInfo.id === 'flux-depth') {
-    // Depth-guided: preserves spatial structure of jewelry while changing style
-    const output = await replicate.run('black-forest-labs/flux-depth-pro', {
-      input: { prompt: transformPrompt, control_image: referenceImageUrl || '', output_format: 'jpg', guidance: 30, steps: 28 },
-    });
-    return typeof output === 'string' ? output : String(output);
-  }
-
-  if (modelInfo.id === 'flux-canny') {
-    // Edge-guided: preserves exact outline/shape of jewelry
-    const output = await replicate.run('black-forest-labs/flux-canny-pro', {
-      input: { prompt: transformPrompt, control_image: referenceImageUrl || '', output_format: 'jpg', guidance: 30, steps: 28 },
-    });
-    return typeof output === 'string' ? output : String(output);
-  }
-
-  if (modelInfo.id === 'flux-redux') {
-    // Image variation: creates high-quality variations preserving identity
-    const output = await replicate.run('black-forest-labs/flux-redux-schnell', {
-      input: { redux_image: referenceImageUrl || '', aspect_ratio: ar, output_format: 'jpg' },
-    });
-    return Array.isArray(output) ? String(output[0]) : String(output);
-  }
-
-  if (modelInfo.id === 'instruct-pix2pix') {
-    // Edit image with text instructions — preserves original while applying changes
-    const output = await replicate.run('timothybrooks/instruct-pix2pix', {
-      input: { image: referenceImageUrl || '', prompt: cleanPrompt, image_guidance_scale: 1.5, guidance_scale: 7.5 },
-    });
-    return Array.isArray(output) ? String(output[0]) : String(output);
-  }
-
-  if (modelInfo.id === 'flux-fill-pro') {
-    const output = await replicate.run('black-forest-labs/flux-fill-pro', {
-      input: { prompt: transformPrompt, image: referenceImageUrl || '', output_format: 'jpg' },
-    });
-    return typeof output === 'string' ? output : String(output);
-  }
-
-  if (modelInfo.id === 'flux-ultra') {
-    const output = await replicate.run('black-forest-labs/flux-1.1-pro-ultra', {
-      input: {
-        prompt: transformPrompt,
-        aspect_ratio: ar,
-        raw: true,
-        output_format: 'jpg',
-        // HIGH reference strength when we have a reference — 70% image, 30% prompt
-        ...(hasRef && { image_prompt: referenceImageUrl, image_prompt_strength: 0.7 }),
-      },
-    });
-    return typeof output === 'string' ? output : String(output);
-  }
-
-  if (modelInfo.id === 'ideogram-v2') {
-    const output = await replicate.run('ideogram-ai/ideogram-v2', {
-      input: { prompt: transformPrompt, aspect_ratio: ar },
-    });
-    return Array.isArray(output) ? String(output[0]) : String(output);
-  }
-
-  // Nano Banana 2 and Pro — best for image transformation with reference
-  const output = await replicate.run(modelInfo.replicateId as `${string}/${string}`, {
-    input: {
-      prompt: hasRef
-        ? `Transform this jewelry photo: keep the EXACT jewelry piece unchanged (same design, shape, text, engravings, stones), but apply new creative styling: ${cleanPrompt}`
-        : cleanPrompt,
-      resolution: modelInfo.id === 'nano-banana-pro' ? '2K' : '1K',
-      aspect_ratio: ar,
-      output_format: 'jpg',
-      ...(modelInfo.id === 'nano-banana-pro' && { safety_filter_level: 'block_only_high' }),
-      // Pass the reference as image input — Nano Banana uses this to preserve the piece
-      ...(hasRef && { image_input: [referenceImageUrl] }),
-    },
-  });
-  return Array.isArray(output) ? String(output[0]) : String(output);
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { prompt, platform, aspectRatio, model: requestedModelId, referenceImageUrl } = await req.json();
 
     if (!prompt) return errorResponse('MISSING_PROMPT', 'No prompt provided.', 400);
-    if (!process.env.REPLICATE_API_TOKEN) return errorResponse('NOT_CONFIGURED', 'Image generation not configured.', 503);
+    if (!process.env.REPLICATE_API_TOKEN) return errorResponse('NOT_CONFIGURED', 'Not configured.', 503);
 
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
+    // Clean and validate prompt
     let cleanPrompt = prompt
       .replace(/--ar\s+\S+/g, '').replace(/--style\s+\S+/g, '')
       .replace(/--v\s+\S+/g, '').replace(/--q\s+\S+/g, '')
       .replace(/--no\s+.*/g, '').trim();
 
-    // Anti-hallucination validation — fix impossible jewelry descriptions
     const validation = validatePrompt(cleanPrompt);
-    if (validation.correctionCount > 0) {
-      cleanPrompt = validation.correctedPrompt;
-    }
+    if (validation.correctionCount > 0) cleanPrompt = validation.correctedPrompt;
 
     const arMatch = prompt.match(/--ar\s+(\d+:\d+)/);
     const ar = arMatch ? arMatch[1] : (aspectRatio || '1:1');
 
-    // Re-host reference image so Replicate models can access it
+    // Re-host reference image so Replicate can access it
     let rehostedRef = referenceImageUrl;
-    if (referenceImageUrl) {
-      rehostedRef = await rehostForReplicate(referenceImageUrl);
-    }
+    if (referenceImageUrl) rehostedRef = await rehostForReplicate(referenceImageUrl);
 
-    const requested = requestedModelId ? getImageModel(requestedModelId) : getBestImageModel();
-    const chain = requested
-      ? [requested, ...IMAGE_MODELS.filter(m => m.id !== requested.id && !m.retired)]
-      : IMAGE_MODELS.filter(m => !m.retired);
+    // Select model — only NB2 or NB Pro
+    const modelInfo = requestedModelId ? (getImageModel(requestedModelId) || getBestImageModel()) : getBestImageModel();
 
-    for (const modelInfo of chain) {
+    // Build the prompt for Nano Banana
+    const hasRef = !!rehostedRef;
+    const finalPrompt = hasRef
+      ? `Transform this jewelry photo: STRICTLY maintain the exact original jewelry design, proportions, stone arrangement, and metal details. Do not modify, add, or embellish the original design. Only change the styling: ${cleanPrompt}`
+      : cleanPrompt;
+
+    // Generate — NO fallback. If it fails, fail honestly.
+    const startTime = Date.now();
+
+    try {
+      const output = await replicate.run(modelInfo.replicateId as `${string}/${string}`, {
+        input: {
+          prompt: finalPrompt,
+          resolution: modelInfo.id === 'nano-banana-pro' ? '2K' : '1K',
+          aspect_ratio: ar,
+          output_format: 'jpg',
+          ...(modelInfo.id === 'nano-banana-pro' && { safety_filter_level: 'block_only_high' }),
+          ...(hasRef && { image_input: [rehostedRef] }),
+        },
+      });
+
+      const resultUrl = Array.isArray(output) ? String(output[0]) : String(output);
+      const elapsed = (Date.now() - startTime) / 1000;
+
+      // Track everything
       try {
-        const startTime = Date.now();
-        const resultUrl = await runModel(replicate, modelInfo, cleanPrompt, ar, rehostedRef);
-        const elapsed = (Date.now() - startTime) / 1000;
+        const sql = getDb();
+        await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata, prompt_text, model_used, reference_url)
+          VALUES ('generated', ${modelInfo.name + ' — ' + new Date().toLocaleDateString()}, ${cleanPrompt.slice(0, 300)}, ${resultUrl}, ${[platform || 'image', modelInfo.id]}, ${JSON.stringify({ model: modelInfo.name, cost: modelInfo.costEstimate, time: elapsed })}, ${cleanPrompt}, ${modelInfo.name}, ${referenceImageUrl || null})`;
+      } catch { /* */ }
+      logCost({ model: modelInfo.name, type: 'image', cost: modelInfo.costEstimate, durationSeconds: elapsed, promptPreview: cleanPrompt, resultUrl });
+      const genId = await trackGeneration({
+        promptText: cleanPrompt, generationModel: modelInfo.id, generationType: 'image',
+        aspectRatio: ar, wasFirstChoice: true,
+        referenceImageUrl, resultUrl, cost: modelInfo.costEstimate, durationSeconds: elapsed,
+      });
 
-        // Auto-save to repository with full lineage
-        try {
-          const sql = getDb();
-          await sql`INSERT INTO repository (category, title, description, image_url, tags, metadata, prompt_text, model_used, reference_url)
-            VALUES ('generated', ${modelInfo.name + ' — ' + new Date().toLocaleDateString()}, ${cleanPrompt.slice(0, 300)}, ${resultUrl}, ${[platform || 'image', modelInfo.id]}, ${JSON.stringify({ model: modelInfo.name, cost: modelInfo.costEstimate, time: elapsed, platform })}, ${cleanPrompt}, ${modelInfo.name}, ${referenceImageUrl || null})`;
-        } catch { /* non-critical */ }
-        logCost({ model: modelInfo.name, type: 'image', cost: modelInfo.costEstimate, durationSeconds: elapsed, promptPreview: cleanPrompt, resultUrl });
-
-        // Track for learning system
-        const genId = await trackGeneration({
-          promptText: cleanPrompt, generationModel: modelInfo.id, generationType: 'image',
-          aspectRatio: ar, wasFirstChoice: modelInfo.id === (requestedModelId || chain[0].id),
-          referenceImageUrl, resultUrl, cost: modelInfo.costEstimate, durationSeconds: elapsed,
-        });
-
-        return Response.json({
-          success: true,
-          data: {
-            id: genId || crypto.randomUUID(),
-            provider: modelInfo.id,
-            model: modelInfo.name,
-            modelId: modelInfo.id,
-            status: 'completed',
-            resultUrl,
-            cost: formatCost(modelInfo.costEstimate),
-            costRaw: modelInfo.costEstimate,
-            timeSeconds: parseFloat(elapsed.toFixed(1)),
-            resolution: modelInfo.resolution,
-            quality: modelInfo.quality,
-            requestedModel: requestedModelId || chain[0].id,
-            wasFirstChoice: modelInfo.id === (requestedModelId || chain[0].id),
-            hadReference: !!referenceImageUrl,
-            validation: validation.correctionCount > 0 ? {
-              corrected: validation.correctionCount,
-              issues: validation.issues.map(i => i.issue),
-            } : null,
-          },
-        });
-      } catch {
-        continue;
+      return Response.json({
+        success: true,
+        data: {
+          id: genId || crypto.randomUUID(),
+          provider: modelInfo.id,
+          model: modelInfo.name,
+          modelId: modelInfo.id,
+          status: 'completed',
+          resultUrl,
+          cost: formatCost(modelInfo.costEstimate),
+          costRaw: modelInfo.costEstimate,
+          timeSeconds: parseFloat(elapsed.toFixed(1)),
+          resolution: modelInfo.resolution,
+          quality: modelInfo.quality,
+          hadReference: hasRef,
+          validation: validation.correctionCount > 0 ? { corrected: validation.correctionCount, issues: validation.issues.map(i => i.issue) } : null,
+        },
+      });
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : 'Unknown error';
+      // Check if it's a capacity issue
+      if (errorMsg.includes('unavailable') || errorMsg.includes('E003') || errorMsg.includes('high demand')) {
+        return errorResponse('MODEL_BUSY', `${modelInfo.name} is currently at capacity. Please try again in a few minutes.`, 503);
       }
+      console.error(`${modelInfo.name} failed:`, errorMsg.slice(0, 100));
+      return errorResponse('GENERATION_FAILED', `${modelInfo.name} failed: ${errorMsg.slice(0, 80)}. Try again shortly.`, 500);
     }
-
-    return errorResponse('GENERATION_FAILED', 'All models are currently unavailable. Please try again.', 500);
   } catch (error) {
     console.error('Image generation error:', error);
     return errorResponse('GENERATION_FAILED', 'Image generation failed.', 500);
