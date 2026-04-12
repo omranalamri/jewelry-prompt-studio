@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
 import Replicate from 'replicate';
-import { getImageModel, getBestImageModel, formatCost } from '@/lib/creative/model-registry';
+import { getBestImageModel, getImageModel, formatCost } from '@/lib/creative/model-registry';
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
 import { trackGeneration } from '@/lib/learning/generation-tracker';
 import { validatePromptWithLearned as validatePrompt } from '@/lib/jewelry/validation';
 
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
-    // Clean and validate
+    // Clean and validate prompt
     let cleanPrompt = prompt
       .replace(/--ar\s+\S+/g, '').replace(/--style\s+\S+/g, '')
       .replace(/--v\s+\S+/g, '').replace(/--q\s+\S+/g, '')
@@ -33,59 +33,75 @@ export async function POST(req: NextRequest) {
     const arMatch = prompt.match(/--ar\s+(\d+:\d+)/);
     const ar = arMatch ? arMatch[1] : (aspectRatio || '1:1');
 
-    // Check if reference URL is Replicate-accessible
-    const hasRef = !!referenceImageUrl && (
-      referenceImageUrl.includes('replicate.com') ||
-      referenceImageUrl.includes('replicate.delivery') ||
-      referenceImageUrl.includes('caleums.com') // direct source URLs work
-    );
-
     const startTime = Date.now();
     let resultUrl: string;
     let modelName: string;
     let modelId: string;
     let cost: number;
+    let cleanedImageUrl: string | null = null;
 
-    if (hasRef) {
-      // WITH REFERENCE: Use Flux Canny Pro for edge-guided generation
-      // This preserves the EXACT shape/outline of the jewelry
-      // Ranked #1 for jewelry fidelity by analysis
+    // Can this URL be accessed by Replicate models?
+    const isAccessible = referenceImageUrl && (
+      referenceImageUrl.includes('replicate.com') ||
+      referenceImageUrl.includes('replicate.delivery') ||
+      referenceImageUrl.includes('caleums.com') ||
+      !referenceImageUrl.includes('blob.vercel-storage')
+    );
+
+    if (isAccessible && referenceImageUrl) {
+      // ============================================
+      // FULL PIPELINE: Customer uploaded their piece
+      // ============================================
+
+      // Step 1: Remove background — isolate the piece
       try {
-        const output = await replicate.run('black-forest-labs/flux-canny-pro', {
+        const bgOutput = await replicate.run('lucataco/remove-bg', {
+          input: { image: referenceImageUrl },
+        });
+        cleanedImageUrl = typeof bgOutput === 'string' ? bgOutput : String(bgOutput);
+      } catch {
+        cleanedImageUrl = referenceImageUrl; // use original if BG removal fails
+      }
+
+      // Step 2: Flux Canny Pro — use the cleaned piece as edge guide
+      // This preserves the EXACT shape while applying the creative prompt
+      try {
+        const cannyOutput = await replicate.run('black-forest-labs/flux-canny-pro', {
           input: {
             prompt: `Professional jewelry photography: ${cleanPrompt}. Maintain exact jewelry design from reference.`,
-            control_image: referenceImageUrl,
+            control_image: cleanedImageUrl || referenceImageUrl,
             output_format: 'jpg',
             steps: 28,
             guidance: 30,
           },
         });
-        resultUrl = typeof output === 'string' ? output : String(output);
+        resultUrl = typeof cannyOutput === 'string' ? cannyOutput : String(cannyOutput);
         modelName = 'Flux Canny Pro';
         modelId = 'flux-canny';
-        cost = 0.05;
+        cost = 0.05 + (cleanedImageUrl !== referenceImageUrl ? 0.01 : 0); // BG removal cost
       } catch {
-        // Fallback: NB2 with image_input
+        // Fallback: Nano Banana 2 with image_input
         try {
-          const output = await replicate.run('google/nano-banana-2', {
+          const nb2Output = await replicate.run('google/nano-banana-2', {
             input: {
-              prompt: `Transform this jewelry photo: STRICTLY maintain the exact original design. ${cleanPrompt}`,
-              image_input: [referenceImageUrl],
+              prompt: `Transform this jewelry photo: STRICTLY maintain exact original design. ${cleanPrompt}`,
+              image_input: [cleanedImageUrl || referenceImageUrl],
               resolution: '1K', aspect_ratio: ar, output_format: 'jpg',
             },
           });
-          resultUrl = Array.isArray(output) ? String(output[0]) : String(output);
-          modelName = 'Nano Banana 2';
+          resultUrl = Array.isArray(nb2Output) ? String(nb2Output[0]) : String(nb2Output);
+          modelName = 'Nano Banana 2 (ref)';
           modelId = 'nano-banana-2';
           cost = 0.05;
         } catch (e2) {
           const msg = e2 instanceof Error ? e2.message : 'Unknown';
-          return errorResponse('GENERATION_FAILED', `Generation failed: ${msg.slice(0, 80)}. Try again shortly.`, 500);
+          return errorResponse('GENERATION_FAILED', `Failed: ${msg.slice(0, 80)}. Try again shortly.`, 500);
         }
       }
     } else {
-      // WITHOUT REFERENCE: Use Nano Banana 2 for prompt-based generation
-      // Scored 4.1/5 in self-review — best for prompt-only
+      // ============================================
+      // PROMPT ONLY: No reference or inaccessible URL
+      // ============================================
       const modelInfo = requestedModelId ? (getImageModel(requestedModelId) || getBestImageModel()) : getBestImageModel();
       try {
         const output = await replicate.run(modelInfo.replicateId as `${string}/${string}`, {
@@ -102,10 +118,7 @@ export async function POST(req: NextRequest) {
         cost = modelInfo.costEstimate;
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Unknown';
-        if (msg.includes('unavailable') || msg.includes('E003')) {
-          return errorResponse('MODEL_BUSY', `${modelInfo.name} at capacity. Try again shortly.`, 503);
-        }
-        return errorResponse('GENERATION_FAILED', `${modelInfo.name}: ${msg.slice(0, 80)}`, 500);
+        return errorResponse('GENERATION_FAILED', `${msg.slice(0, 80)}. Try again shortly.`, 500);
       }
     }
 
@@ -131,7 +144,8 @@ export async function POST(req: NextRequest) {
         provider: modelId, model: modelName, modelId, status: 'completed',
         resultUrl, cost: formatCost(cost), costRaw: cost,
         timeSeconds: parseFloat(elapsed.toFixed(1)),
-        hadReference: hasRef,
+        hadReference: !!isAccessible,
+        cleanedImageUrl,
         validation: validation.correctionCount > 0 ? { corrected: validation.correctionCount, issues: validation.issues.map(i => i.issue) } : null,
       },
     });
