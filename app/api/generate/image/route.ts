@@ -62,8 +62,39 @@ async function runModel(
     return Array.isArray(output) ? String(output[0]) : String(output);
   }
 
+  if (modelInfo.id === 'flux-depth') {
+    // Depth-guided: preserves spatial structure of jewelry while changing style
+    const output = await replicate.run('black-forest-labs/flux-depth-pro', {
+      input: { prompt: transformPrompt, control_image: referenceImageUrl || '', output_format: 'jpg', guidance: 30, steps: 28 },
+    });
+    return typeof output === 'string' ? output : String(output);
+  }
+
+  if (modelInfo.id === 'flux-canny') {
+    // Edge-guided: preserves exact outline/shape of jewelry
+    const output = await replicate.run('black-forest-labs/flux-canny-pro', {
+      input: { prompt: transformPrompt, control_image: referenceImageUrl || '', output_format: 'jpg', guidance: 30, steps: 28 },
+    });
+    return typeof output === 'string' ? output : String(output);
+  }
+
+  if (modelInfo.id === 'flux-redux') {
+    // Image variation: creates high-quality variations preserving identity
+    const output = await replicate.run('black-forest-labs/flux-redux-schnell', {
+      input: { redux_image: referenceImageUrl || '', aspect_ratio: ar, output_format: 'jpg' },
+    });
+    return Array.isArray(output) ? String(output[0]) : String(output);
+  }
+
+  if (modelInfo.id === 'instruct-pix2pix') {
+    // Edit image with text instructions — preserves original while applying changes
+    const output = await replicate.run('timothybrooks/instruct-pix2pix', {
+      input: { image: referenceImageUrl || '', prompt: cleanPrompt, image_guidance_scale: 1.5, guidance_scale: 7.5 },
+    });
+    return Array.isArray(output) ? String(output[0]) : String(output);
+  }
+
   if (modelInfo.id === 'flux-fill-pro') {
-    // Inpainting model — needs a mask. For now use as standard gen.
     const output = await replicate.run('black-forest-labs/flux-fill-pro', {
       input: { prompt: transformPrompt, image: referenceImageUrl || '', output_format: 'jpg' },
     });
