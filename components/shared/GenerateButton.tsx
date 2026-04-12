@@ -19,12 +19,11 @@ interface GenerateButtonProps {
 const isVideoPlatform = (p: PlatformId) => p === 'runway' || p === 'kling';
 
 const IMAGE_MODEL_OPTIONS = [
+  { id: 'nano-banana-2', name: 'Nano Banana 2', badge: 'Best Fidelity', cost: '$0.05', quality: 10 },
   { id: 'ideogram-v3', name: 'Ideogram V3', badge: 'Best Quality', cost: '$0.08', quality: 10 },
-  { id: 'flux-canny', name: 'Flux Canny Pro', badge: 'Edge Preserve', cost: '$0.05', quality: 9 },
-  { id: 'flux-depth', name: 'Flux Depth Pro', badge: 'Structure Keep', cost: '$0.05', quality: 9 },
-  { id: 'nano-banana-pro', name: 'Nano Banana Pro', badge: 'Reference Input', cost: '$0.13', quality: 9 },
-  { id: 'recraft-v3', name: 'Recraft V3', badge: 'Fast + Cheap', cost: '$0.04', quality: 8 },
-  { id: 'flux-redux', name: 'Flux Redux', badge: 'Variations', cost: '$0.03', quality: 8 },
+  { id: 'flux-canny', name: 'Flux Canny', badge: 'Edge Preserve', cost: '$0.05', quality: 9 },
+  { id: 'nano-banana-pro', name: 'NB Pro', badge: 'Reference 2K', cost: '$0.13', quality: 9 },
+  { id: 'recraft-v3', name: 'Recraft V3', badge: 'Fast Fallback', cost: '$0.04', quality: 8 },
 ];
 
 const VIDEO_MODEL_OPTIONS = [

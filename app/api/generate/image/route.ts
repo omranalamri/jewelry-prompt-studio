@@ -5,6 +5,7 @@ import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
 import { trackGeneration } from '@/lib/learning/generation-tracker';
 import { validatePromptWithLearned as validatePrompt } from '@/lib/jewelry/validation';
+import { rehostForReplicate } from '@/lib/rehost-image';
 
 export const maxDuration = 120;
 
@@ -162,15 +163,21 @@ export async function POST(req: NextRequest) {
     const arMatch = prompt.match(/--ar\s+(\d+:\d+)/);
     const ar = arMatch ? arMatch[1] : (aspectRatio || '1:1');
 
+    // Re-host reference image so Replicate models can access it
+    let rehostedRef = referenceImageUrl;
+    if (referenceImageUrl) {
+      rehostedRef = await rehostForReplicate(referenceImageUrl);
+    }
+
     const requested = requestedModelId ? getImageModel(requestedModelId) : getBestImageModel();
     const chain = requested
-      ? [requested, ...IMAGE_MODELS.filter(m => m.id !== requested.id)]
-      : IMAGE_MODELS;
+      ? [requested, ...IMAGE_MODELS.filter(m => m.id !== requested.id && !m.retired)]
+      : IMAGE_MODELS.filter(m => !m.retired);
 
     for (const modelInfo of chain) {
       try {
         const startTime = Date.now();
-        const resultUrl = await runModel(replicate, modelInfo, cleanPrompt, ar, referenceImageUrl);
+        const resultUrl = await runModel(replicate, modelInfo, cleanPrompt, ar, rehostedRef);
         const elapsed = (Date.now() - startTime) / 1000;
 
         // Auto-save to repository with full lineage

@@ -19,9 +19,24 @@ export interface ModelInfo {
   retiredReason?: string;
 }
 
-// IMAGE MODELS — ranked by quality AND reliability
-// Lesson learned: models go down frequently. Need diversity across providers.
+// IMAGE MODELS — Nano Banana 2 as primary (image_input for design fidelity)
+// Blob URL fix: all images re-hosted via Replicate files API
 export const IMAGE_MODELS: ModelInfo[] = [
+  {
+    id: 'nano-banana-2',
+    replicateId: 'google/nano-banana-2',
+    name: 'Nano Banana 2',
+    provider: 'Google',
+    type: 'image',
+    quality: 10,
+    speed: 7,
+    costEstimate: 0.05,
+    resolution: '1K',
+    description: 'Google\'s fast model with image_input for design fidelity. Multi-image fusion. Character consistency.',
+    badge: 'Best Fidelity',
+    avgTimeSeconds: 22,
+    supportsImageInput: true,
+  },
   {
     id: 'ideogram-v3',
     replicateId: 'ideogram-ai/ideogram-v3-quality',
@@ -140,21 +155,6 @@ export const IMAGE_MODELS: ModelInfo[] = [
     description: 'Edit images with text instructions — change lighting/background while keeping the piece.',
     badge: 'Image Editing',
     avgTimeSeconds: 15,
-    supportsImageInput: true,
-  },
-  {
-    id: 'nano-banana-2',
-    replicateId: 'google/nano-banana-2',
-    name: 'Nano Banana 2',
-    provider: 'Google',
-    type: 'image',
-    quality: 8,
-    speed: 8,
-    costEstimate: 0.05,
-    resolution: '1K',
-    description: 'Fast, character consistency, multi-image. Often at capacity.',
-    badge: 'Fast + Consistent',
-    avgTimeSeconds: 10,
     supportsImageInput: true,
   },
   // RETIRED

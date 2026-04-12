@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import Replicate from 'replicate';
 import { VIDEO_MODELS, getVideoModel, getBestVideoModel, formatCost, ModelInfo } from '@/lib/creative/model-registry';
+import { rehostForReplicate } from '@/lib/rehost-image';
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
 import { trackGeneration } from '@/lib/learning/generation-tracker';
@@ -146,7 +147,9 @@ export async function POST(req: NextRequest) {
     // 2. Animate that new creative frame into video
     // ================================================================
 
-    const firstFrameUrl = await generateCreativeFrame(replicate, validatedPrompt, aspectRatio, referenceImageUrl || undefined);
+    // Re-host reference so all models can access it
+    const rehostedRef = referenceImageUrl ? await rehostForReplicate(referenceImageUrl) : undefined;
+    const firstFrameUrl = await generateCreativeFrame(replicate, validatedPrompt, aspectRatio, rehostedRef);
     const frameCost = 0.13; // Nano Banana Pro cost for frame
 
     if (!firstFrameUrl) {
