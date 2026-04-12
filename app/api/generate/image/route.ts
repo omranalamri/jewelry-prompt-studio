@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
     const ar = arMatch ? arMatch[1] : (aspectRatio || '1:1');
 
     // Re-host reference image so Replicate can access it
-    let rehostedRef = referenceImageUrl;
+    // Blob URLs return 403 — rehost returns undefined in that case
+    let rehostedRef: string | undefined;
     if (referenceImageUrl) rehostedRef = await rehostForReplicate(referenceImageUrl);
 
     // Select model — only NB2 or NB Pro
