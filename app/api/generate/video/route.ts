@@ -97,7 +97,8 @@ async function runWithRunway(imageUrl: string, prompt: string, duration: number)
 
 async function runWithReplicate(
   replicate: Replicate, modelInfo: ModelInfo, prompt: string,
-  firstFrameUrl: string | null, duration: number, aspectRatio: string
+  firstFrameUrl: string | null, duration: number, aspectRatio: string,
+  referenceImageUrl?: string
 ) {
   let input: Record<string, unknown>;
   if (modelInfo.id === 'kling-2.5') {
@@ -105,7 +106,9 @@ async function runWithReplicate(
   } else if (modelInfo.id === 'veo-3') {
     input = { prompt, duration, aspect_ratio: aspectRatio, resolution: '1080p', generate_audio: true, ...(firstFrameUrl && { image: firstFrameUrl }) };
   } else if (modelInfo.id === 'seedance-2') {
-    input = { prompt, duration: Math.min(duration, 10), aspect_ratio: aspectRatio, generate_audio: true, ...(firstFrameUrl && { image: firstFrameUrl, reference_images: [firstFrameUrl] }) };
+    // Pass both the creative frame AND the original reference for maximum design fidelity
+    const refs = [firstFrameUrl, referenceImageUrl].filter(Boolean) as string[];
+    input = { prompt, duration: Math.min(duration, 10), aspect_ratio: aspectRatio, generate_audio: true, ...(firstFrameUrl && { image: firstFrameUrl }), ...(refs.length > 0 && { reference_images: refs.slice(0, 4) }) };
   } else if (modelInfo.id === 'seedance') {
     input = { prompt, duration: Math.min(duration, 10), aspect_ratio: aspectRatio, generate_audio: true, camera_fixed: false, ...(firstFrameUrl && { image: firstFrameUrl }) };
   } else if (modelInfo.id === 'veo-2') {
@@ -170,7 +173,7 @@ export async function POST(req: NextRequest) {
         if (modelInfo.id === 'runway') {
           result = await runWithRunway(firstFrameUrl, validatedPrompt, duration);
         } else {
-          result = await runWithReplicate(replicate, modelInfo, validatedPrompt, firstFrameUrl, duration, aspectRatio);
+          result = await runWithReplicate(replicate, modelInfo, validatedPrompt, firstFrameUrl, duration, aspectRatio, referenceImageUrl);
         }
 
         return Response.json({
