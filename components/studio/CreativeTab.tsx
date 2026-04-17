@@ -64,10 +64,12 @@ interface CreativeResult {
 import { CAMPAIGN_TEMPLATES, TEMPLATE_CATEGORIES } from '@/lib/creative/campaign-templates';
 
 function fmtInline(text: string): React.ReactNode {
+  if (!text) return null;
   return text.split(/(\*\*[^*]+\*\*)/g).map((p, i) => p.startsWith('**') && p.endsWith('**')
     ? <strong key={i} className="font-semibold">{p.slice(2, -2)}</strong> : <Fragment key={i}>{p}</Fragment>);
 }
 function FmtMsg({ text, isUser }: { text: string; isUser: boolean }) {
+  if (!text) return <>No response.</>;
   if (isUser) return <>{text}</>;
   return (<div className="space-y-2">{text.split('\n\n').filter(Boolean).map((para, i) => {
     const lines = para.split('\n');
@@ -195,7 +197,7 @@ export function CreativeTab() {
 
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.message as string,
+        content: (data.message || data.content || 'No response.') as string,
         rawJson: json.rawJson,
         phase: data.phase as string,
       }]);

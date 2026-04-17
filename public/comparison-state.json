@@ -1,0 +1,748 @@
+{
+  "references": [
+    {
+      "id": 1,
+      "name": "Gold Solitaire Ring",
+      "prompt": "Gold solitaire diamond engagement ring, professional product photography on pure white background, sharp focus, high detail",
+      "referenceUrl": "https://replicate.delivery/xezq/mBQHZOXLewSyV6DWTvDcpoKqT11PfykwcFNXaNpDD5fueSpZB/tmpqelqsrf0.jpeg",
+      "time": "20.0"
+    },
+    {
+      "id": 2,
+      "name": "Pearl Necklace",
+      "prompt": "Elegant pearl strand necklace with gold clasp, professional jewelry product shot, white background, every pearl visible",
+      "referenceUrl": "https://replicate.delivery/xezq/t3eXmX3i9nSVVC4rdd2XvWc4iMBtyFvDMBiAfgNVRuuWvUaWA/tmp_3d4zjlt.jpeg",
+      "time": "19.7"
+    },
+    {
+      "id": 3,
+      "name": "Diamond Studs",
+      "prompt": "Pair of round brilliant diamond stud earrings in platinum prong setting, macro jewelry photography, white background",
+      "referenceUrl": "https://replicate.delivery/xezq/Ewe1yNQ8Hq3XOioaJAQcz6v2VdfeFehP4KKgkEGkHLcX9SpZB/tmp0tmxtag9.jpeg",
+      "time": "18.5"
+    },
+    {
+      "id": 4,
+      "name": "Gold Chain Bracelet",
+      "prompt": "Delicate gold chain bracelet with small heart charm, product photography, white background, fine jewelry detail",
+      "referenceUrl": "https://replicate.delivery/xezq/kCfALpJwaXSwZ6Y2RLSfHMzrFczbU4LzHnX7bYN76qlsvUaWA/tmpdeh4rzo1.jpeg",
+      "time": "21.3"
+    },
+    {
+      "id": 5,
+      "name": "Ruby Pendant",
+      "prompt": "Oval ruby pendant necklace set in yellow gold with diamond halo, professional jewelry photo, white background",
+      "referenceUrl": "https://replicate.delivery/xezq/ORqix8c71nafOSy0Q0eBPvHUo7vaJrbrKsSKF3BzypYsvUaWA/tmp3rj886_u.jpeg",
+      "time": "21.1"
+    },
+    {
+      "id": 6,
+      "name": "Silver Filigree Bangle",
+      "prompt": "Sterling silver bangle bracelet with intricate filigree scrollwork pattern, product photography, white background",
+      "referenceUrl": "https://replicate.delivery/xezq/eLDGli2VucWJeE4sklvOBfbK74TeRT3CfpqAPD73gska9lSzC/tmpdp7vrf4y.jpeg",
+      "time": "20.3"
+    },
+    {
+      "id": 7,
+      "name": "Emerald Ring",
+      "prompt": "Emerald cut emerald ring with diamond side stones in white gold, professional product shot, white background",
+      "referenceUrl": "https://replicate.delivery/xezq/0IAWMmdDPfxLVySmh6AORxzWzUQihbaxiRShrtsNvBifvUaWA/tmpjvph8wke.jpeg",
+      "time": "19.1"
+    },
+    {
+      "id": 8,
+      "name": "Gold Hoops",
+      "prompt": "Medium gold hoop earrings with pave diamond front, product photography, white background, elegant design",
+      "referenceUrl": "https://replicate.delivery/xezq/wdRnaPeAajU9HCcZdYMN2luYk8SMGVUdP4IJUrtkxBkfvUaWA/tmp4lrq06sg.jpeg",
+      "time": "19.2"
+    },
+    {
+      "id": 9,
+      "name": "Vintage Brooch",
+      "prompt": "Vintage art deco pearl and gold brooch with geometric design, antique jewelry photography, white background",
+      "referenceUrl": "https://replicate.delivery/xezq/wxG2w6AmQboWEFIyKxojzIbCAWXNVspVx91takDEyEOBMlmF/tmpgusi5tka.jpeg",
+      "time": "24.5"
+    },
+    {
+      "id": 10,
+      "name": "Sapphire Bracelet",
+      "prompt": "Blue sapphire and white gold tennis bracelet, professional jewelry photography, white background, every stone visible",
+      "referenceUrl": "https://replicate.delivery/xezq/SsLxSBWO5JY7PNK8NCVIrPL6GTtDJHF1RZnB7W1fQ22LYKNLA/tmpfsyqjrmu.jpeg",
+      "time": "18.6"
+    }
+  ],
+  "comparisons": [
+    {
+      "id": 1,
+      "name": "Gold Solitaire Ring",
+      "referenceUrl": "https://replicate.delivery/xezq/mBQHZOXLewSyV6DWTvDcpoKqT11PfykwcFNXaNpDD5fueSpZB/tmpqelqsrf0.jpeg",
+      "referencePrompt": "Gold solitaire diamond engagement ring, professional product photography on pure white background, sharp focus, high detail",
+      "creativeDirection": "On black velvet display, dramatic side lighting, luxury magazine advertisement, deep shadows, golden highlights",
+      "simple": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/tqay3VgiX4JIJtefLCicjDn7tu8XeT3p9fs9xDCjA3pzDTpZB/tmpch6x3b5q.jpeg",
+        "model": "Nano Banana Pro",
+        "cost": "$0.14",
+        "costRaw": 0.137,
+        "timeSeconds": 36.7,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/EuY2BgtzgJp0Fhq4ZmJJkm1iygxm0vroR4GCNdjbReMMYKNLA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/mBQHZOXLewSyV6DWTvDcpoKqT11PfykwcFNXaNpDD5fueSpZB/tmpqelqsrf0.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/EuY2BgtzgJp0Fhq4ZmJJkm1iygxm0vroR4GCNdjbReMMYKNLA/output.png",
+            "time": "0.9s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (NB Pro 2K)",
+            "url": "https://replicate.delivery/xezq/tqay3VgiX4JIJtefLCicjDn7tu8XeT3p9fs9xDCjA3pzDTpZB/tmpch6x3b5q.jpeg",
+            "time": "35.8s",
+            "model": "Nano Banana Pro",
+            "cost": "$0.13"
+          }
+        ]
+      },
+      "full": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/YPr2fSKwnJzEKC3dro1zHzfnINrCAAwCgqOITT4C3xRGxUaWA/tmpfjddkesc.jpeg",
+        "model": "Nano Banana 2",
+        "cost": "$0.10",
+        "costRaw": 0.10300000000000001,
+        "timeSeconds": 46.8,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/aVheNdFeWSg0yEo6rdne7ghDZqtYiumB4TY4zupQ6Aqxgp0sA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/mBQHZOXLewSyV6DWTvDcpoKqT11PfykwcFNXaNpDD5fueSpZB/tmpqelqsrf0.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/aVheNdFeWSg0yEo6rdne7ghDZqtYiumB4TY4zupQ6Aqxgp0sA/output.png",
+            "time": "0.9s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "canny",
+            "label": "Edge-Guided (Flux Canny Pro)",
+            "url": "https://replicate.delivery/xezq/eh9q4nE2Q1UweUOz9KiSllHaAfP7zWHGttcNd9uQJOqOhp0sA/tmp5z0seiv3.jpg",
+            "time": "15.0s",
+            "model": "Flux Canny Pro",
+            "cost": "$0.05"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Nano Banana 2)",
+            "url": "https://replicate.delivery/xezq/YPr2fSKwnJzEKC3dro1zHzfnINrCAAwCgqOITT4C3xRGxUaWA/tmpfjddkesc.jpeg",
+            "time": "30.9s",
+            "model": "Nano Banana 2",
+            "cost": "$0.05"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Pearl Necklace",
+      "referenceUrl": "https://replicate.delivery/xezq/t3eXmX3i9nSVVC4rdd2XvWc4iMBtyFvDMBiAfgNVRuuWvUaWA/tmp_3d4zjlt.jpeg",
+      "referencePrompt": "Elegant pearl strand necklace with gold clasp, professional jewelry product shot, white background, every pearl visible",
+      "creativeDirection": "Lifestyle photography worn on elegant model, warm golden hour sunlight, romantic and aspirational",
+      "simple": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/8a9eV0HE3AXARaVeDCO7vOpBOqJgIJ9BKtdEsm3D7VLvxUaWA/tmprng6t5vv.jpeg",
+        "model": "Nano Banana Pro",
+        "cost": "$0.14",
+        "costRaw": 0.137,
+        "timeSeconds": 40.3,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/FVUuKZ6UtuKOFtBUMPsUZpxui0Lf2MSM0VRb7ScCZEjjYKNLA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/t3eXmX3i9nSVVC4rdd2XvWc4iMBtyFvDMBiAfgNVRuuWvUaWA/tmp_3d4zjlt.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/FVUuKZ6UtuKOFtBUMPsUZpxui0Lf2MSM0VRb7ScCZEjjYKNLA/output.png",
+            "time": "1.0s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (NB Pro 2K)",
+            "url": "https://replicate.delivery/xezq/8a9eV0HE3AXARaVeDCO7vOpBOqJgIJ9BKtdEsm3D7VLvxUaWA/tmprng6t5vv.jpeg",
+            "time": "39.4s",
+            "model": "Nano Banana Pro",
+            "cost": "$0.13"
+          }
+        ]
+      },
+      "full": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/7BgCk8DebVRFIaE00gh6XjZ11psjbLLUgfL3PIBzua7JyUaWA/tmpjxwunnav.jpeg",
+        "model": "Nano Banana 2",
+        "cost": "$0.10",
+        "costRaw": 0.10300000000000001,
+        "timeSeconds": 65.5,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/8NP7XfaTrhW0ZqVzfseNjH4v2PnumY8dcq3Ssw1NYDDSip0sA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/t3eXmX3i9nSVVC4rdd2XvWc4iMBtyFvDMBiAfgNVRuuWvUaWA/tmp_3d4zjlt.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/8NP7XfaTrhW0ZqVzfseNjH4v2PnumY8dcq3Ssw1NYDDSip0sA/output.png",
+            "time": "1.6s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "canny",
+            "label": "Edge-Guided (Flux Canny Pro)",
+            "url": "https://replicate.delivery/xezq/STq5y47KtpKABJotUXof3fTu78Mvkk3l5C4Wpngoe46xip0sA/tmpughuvkuq.jpg",
+            "time": "14.7s",
+            "model": "Flux Canny Pro",
+            "cost": "$0.05"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Nano Banana 2)",
+            "url": "https://replicate.delivery/xezq/7BgCk8DebVRFIaE00gh6XjZ11psjbLLUgfL3PIBzua7JyUaWA/tmpjxwunnav.jpeg",
+            "time": "49.1s",
+            "model": "Nano Banana 2",
+            "cost": "$0.05"
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "name": "Diamond Studs",
+      "referenceUrl": "https://replicate.delivery/xezq/Ewe1yNQ8Hq3XOioaJAQcz6v2VdfeFehP4KKgkEGkHLcX9SpZB/tmp0tmxtag9.jpeg",
+      "referencePrompt": "Pair of round brilliant diamond stud earrings in platinum prong setting, macro jewelry photography, white background",
+      "creativeDirection": "Extreme macro closeup showing every facet and metalwork detail, shallow depth of field, studio lighting",
+      "simple": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/6u1lsQgtH2YDPtkgau31l8LzPfuEoRpd2X6RyJnF1FscZKNLA/tmp_wm1zlxn.jpeg",
+        "model": "Nano Banana Pro",
+        "cost": "$0.14",
+        "costRaw": 0.137,
+        "timeSeconds": 48,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/5IwNVfebM4qIDkN7GWNmyjseofQQDgaIOoCtLWVNuAfLTmSzC/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/Ewe1yNQ8Hq3XOioaJAQcz6v2VdfeFehP4KKgkEGkHLcX9SpZB/tmp0tmxtag9.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/5IwNVfebM4qIDkN7GWNmyjseofQQDgaIOoCtLWVNuAfLTmSzC/output.png",
+            "time": "15.9s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (NB Pro 2K)",
+            "url": "https://replicate.delivery/xezq/6u1lsQgtH2YDPtkgau31l8LzPfuEoRpd2X6RyJnF1FscZKNLA/tmp_wm1zlxn.jpeg",
+            "time": "32.2s",
+            "model": "Nano Banana Pro",
+            "cost": "$0.13"
+          }
+        ]
+      },
+      "full": {
+        "success": false,
+        "error": "NB2 failed: Prediction failed: Prediction interrupted; please retry (code: PA)"
+      }
+    },
+    {
+      "id": 4,
+      "name": "Gold Chain Bracelet",
+      "referenceUrl": "https://replicate.delivery/xezq/kCfALpJwaXSwZ6Y2RLSfHMzrFczbU4LzHnX7bYN76qlsvUaWA/tmpdeh4rzo1.jpeg",
+      "referencePrompt": "Delicate gold chain bracelet with small heart charm, product photography, white background, fine jewelry detail",
+      "creativeDirection": "On white marble surface with soft morning window light, editorial style, minimalist elegance",
+      "simple": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/Mvwb16QmdwbeEScDwMXM3ZX9jEKBAz8N2UcZ409CYiQBaKNLA/tmp1dzu_gjk.jpeg",
+        "model": "Nano Banana Pro",
+        "cost": "$0.14",
+        "costRaw": 0.137,
+        "timeSeconds": 38.1,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/JG8mlf3hzp1hYKK282mrRBrK308CUGOPywrjmzsTuuHvZKNLA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/kCfALpJwaXSwZ6Y2RLSfHMzrFczbU4LzHnX7bYN76qlsvUaWA/tmpdeh4rzo1.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/JG8mlf3hzp1hYKK282mrRBrK308CUGOPywrjmzsTuuHvZKNLA/output.png",
+            "time": "2.0s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (NB Pro 2K)",
+            "url": "https://replicate.delivery/xezq/Mvwb16QmdwbeEScDwMXM3ZX9jEKBAz8N2UcZ409CYiQBaKNLA/tmp1dzu_gjk.jpeg",
+            "time": "36.1s",
+            "model": "Nano Banana Pro",
+            "cost": "$0.13"
+          }
+        ]
+      },
+      "full": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/TXUn0eC00PTfkEWrAP6HyEw7DRAQfVZcohl72i4NkdHNop0sA/tmp5o7xqmzo.jpeg",
+        "model": "Nano Banana 2",
+        "cost": "$0.10",
+        "costRaw": 0.10300000000000001,
+        "timeSeconds": 41.9,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/qZV0PL74fVyDCaKb8U256n3FI3UuLTkCfdV35JCT6oHczUaWA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/kCfALpJwaXSwZ6Y2RLSfHMzrFczbU4LzHnX7bYN76qlsvUaWA/tmpdeh4rzo1.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/qZV0PL74fVyDCaKb8U256n3FI3UuLTkCfdV35JCT6oHczUaWA/output.png",
+            "time": "1.1s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "canny",
+            "label": "Edge-Guided (Flux Canny Pro)",
+            "url": "https://replicate.delivery/xezq/xwO381uJJmIGDZMHvBz0zefUbX07zYyRWavOFTrnoUdszUaWA/tmpsflejfun.jpg",
+            "time": "14.9s",
+            "model": "Flux Canny Pro",
+            "cost": "$0.05"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Nano Banana 2)",
+            "url": "https://replicate.delivery/xezq/TXUn0eC00PTfkEWrAP6HyEw7DRAQfVZcohl72i4NkdHNop0sA/tmp5o7xqmzo.jpeg",
+            "time": "25.9s",
+            "model": "Nano Banana 2",
+            "cost": "$0.05"
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "name": "Ruby Pendant",
+      "referenceUrl": "https://replicate.delivery/xezq/ORqix8c71nafOSy0Q0eBPvHUo7vaJrbrKsSKF3BzypYsvUaWA/tmp3rj886_u.jpeg",
+      "referencePrompt": "Oval ruby pendant necklace set in yellow gold with diamond halo, professional jewelry photo, white background",
+      "creativeDirection": "Clean e-commerce product photography, floating on white, even soft box lighting, crisp detail",
+      "simple": {
+        "success": false,
+        "error": "NB Pro failed: Prediction failed: Prediction interrupted; please retry (code: PA)"
+      },
+      "full": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/l1bqe3CJa7ykASWCmP6Bql9peoRrixvfdchJ8uXfzf1AomSzC/tmp6807qv3h.jpeg",
+        "model": "Nano Banana 2",
+        "cost": "$0.10",
+        "costRaw": 0.10300000000000001,
+        "timeSeconds": 58.5,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/nMo5DE5ZyBIxORM5qCPOXIpw0nqofwXrkwH4y9iKkZOEaKNLA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/ORqix8c71nafOSy0Q0eBPvHUo7vaJrbrKsSKF3BzypYsvUaWA/tmp3rj886_u.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/nMo5DE5ZyBIxORM5qCPOXIpw0nqofwXrkwH4y9iKkZOEaKNLA/output.png",
+            "time": "2.0s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "canny",
+            "label": "Edge-Guided (Flux Canny Pro)",
+            "url": "https://replicate.delivery/xezq/fU2MqmiV7J2SSaMgR70mDh6pmyKQ1ecswjDso8LAyUJl0UaWA/tmp3_iyurkp.jpg",
+            "time": "29.2s",
+            "model": "Flux Canny Pro",
+            "cost": "$0.05"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Nano Banana 2)",
+            "url": "https://replicate.delivery/xezq/l1bqe3CJa7ykASWCmP6Bql9peoRrixvfdchJ8uXfzf1AomSzC/tmp6807qv3h.jpeg",
+            "time": "27.3s",
+            "model": "Nano Banana 2",
+            "cost": "$0.05"
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "name": "Silver Filigree Bangle",
+      "referenceUrl": "https://replicate.delivery/xezq/eLDGli2VucWJeE4sklvOBfbK74TeRT3CfpqAPD73gska9lSzC/tmpdp7vrf4y.jpeg",
+      "referencePrompt": "Sterling silver bangle bracelet with intricate filigree scrollwork pattern, product photography, white background",
+      "creativeDirection": "On vintage mahogany jewelry box, romantic soft-focus background, warm amber tones, candlelight feel",
+      "simple": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/MpFuOvfyTSXwYSlJUULUcXvpkfjQlaLTTMxaG2I0Hp3D2UaWA/tmpqa301x39.jpeg",
+        "model": "Nano Banana Pro",
+        "cost": "$0.14",
+        "costRaw": 0.137,
+        "timeSeconds": 62.7,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/g4goxKhw5qLzHlrkeZ5mNywpPJNWgokeGrKCf6gJwMEPqp0sA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/eLDGli2VucWJeE4sklvOBfbK74TeRT3CfpqAPD73gska9lSzC/tmpdp7vrf4y.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/g4goxKhw5qLzHlrkeZ5mNywpPJNWgokeGrKCf6gJwMEPqp0sA/output.png",
+            "time": "2.8s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (NB Pro 2K)",
+            "url": "https://replicate.delivery/xezq/MpFuOvfyTSXwYSlJUULUcXvpkfjQlaLTTMxaG2I0Hp3D2UaWA/tmpqa301x39.jpeg",
+            "time": "59.9s",
+            "model": "Nano Banana Pro",
+            "cost": "$0.13"
+          }
+        ]
+      },
+      "full": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/V1HM88Lxh2ZQENeZr4ErVO59MHjfbDjEuZ9v4fskCj5krp0sA/tmp16dln1lj.jpeg",
+        "model": "Nano Banana 2",
+        "cost": "$0.10",
+        "costRaw": 0.10300000000000001,
+        "timeSeconds": 45.5,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/iNSPVS9upNIMO9wSxF7qXiv20HmrblbmHfyQvsQmOFbmaKNLA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/eLDGli2VucWJeE4sklvOBfbK74TeRT3CfpqAPD73gska9lSzC/tmpdp7vrf4y.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/iNSPVS9upNIMO9wSxF7qXiv20HmrblbmHfyQvsQmOFbmaKNLA/output.png",
+            "time": "7.7s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "canny",
+            "label": "Edge-Guided (Flux Canny Pro)",
+            "url": "https://replicate.delivery/xezq/RephuLLzPwwBdaOeWg98kj2cRQQ4WeDFLWgBMzHa2emsVTpZB/tmpoc_xxkbb.jpg",
+            "time": "15.2s",
+            "model": "Flux Canny Pro",
+            "cost": "$0.05"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Nano Banana 2)",
+            "url": "https://replicate.delivery/xezq/V1HM88Lxh2ZQENeZr4ErVO59MHjfbDjEuZ9v4fskCj5krp0sA/tmp16dln1lj.jpeg",
+            "time": "22.5s",
+            "model": "Nano Banana 2",
+            "cost": "$0.05"
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "name": "Emerald Ring",
+      "referenceUrl": "https://replicate.delivery/xezq/0IAWMmdDPfxLVySmh6AORxzWzUQihbaxiRShrtsNvBifvUaWA/tmpjvph8wke.jpeg",
+      "referencePrompt": "Emerald cut emerald ring with diamond side stones in white gold, professional product shot, white background",
+      "creativeDirection": "Bold high-contrast advertising shot, dramatic reflections on polished black surface, striking and modern",
+      "simple": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/OXSu4nXByGoSMlfYHa9YnUVKa3AKiIDdKZPo1cnIvDbbbKNLA/tmphmr5eav7.jpeg",
+        "model": "Nano Banana Pro",
+        "cost": "$0.14",
+        "costRaw": 0.137,
+        "timeSeconds": 50.5,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/VPKHJpXS3Y5tIBwsjzK0lG2HVaQFMqrIZhe1UI0FiW3DbKNLA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/0IAWMmdDPfxLVySmh6AORxzWzUQihbaxiRShrtsNvBifvUaWA/tmpjvph8wke.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/VPKHJpXS3Y5tIBwsjzK0lG2HVaQFMqrIZhe1UI0FiW3DbKNLA/output.png",
+            "time": "4.0s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (NB Pro 2K)",
+            "url": "https://replicate.delivery/xezq/OXSu4nXByGoSMlfYHa9YnUVKa3AKiIDdKZPo1cnIvDbbbKNLA/tmphmr5eav7.jpeg",
+            "time": "46.5s",
+            "model": "Nano Banana Pro",
+            "cost": "$0.13"
+          }
+        ]
+      },
+      "full": {
+        "success": false,
+        "error": "NB2 failed: Prediction failed: Prediction interrupted; please retry (code: PA)"
+      }
+    },
+    {
+      "id": 8,
+      "name": "Gold Hoops",
+      "referenceUrl": "https://replicate.delivery/xezq/wdRnaPeAajU9HCcZdYMN2luYk8SMGVUdP4IJUrtkxBkfvUaWA/tmp4lrq06sg.jpeg",
+      "referencePrompt": "Medium gold hoop earrings with pave diamond front, product photography, white background, elegant design",
+      "creativeDirection": "Evening gala setting on model, glamorous crystal chandelier bokeh, sophisticated lighting",
+      "simple": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/fQ0ktEn8i5zLQqGuNbtKLMebJLMoDh7eC11S6Hf26QXAgTpZB/tmpv4fvenry.jpeg",
+        "model": "Nano Banana Pro",
+        "cost": "$0.14",
+        "costRaw": 0.137,
+        "timeSeconds": 40.5,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/7MWaGrLTyeR2SqtSOzZ0VTyOY24CxUwx9V5K1v29NX0sbKNLA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/wdRnaPeAajU9HCcZdYMN2luYk8SMGVUdP4IJUrtkxBkfvUaWA/tmp4lrq06sg.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/7MWaGrLTyeR2SqtSOzZ0VTyOY24CxUwx9V5K1v29NX0sbKNLA/output.png",
+            "time": "1.0s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (NB Pro 2K)",
+            "url": "https://replicate.delivery/xezq/fQ0ktEn8i5zLQqGuNbtKLMebJLMoDh7eC11S6Hf26QXAgTpZB/tmpv4fvenry.jpeg",
+            "time": "39.5s",
+            "model": "Nano Banana Pro",
+            "cost": "$0.13"
+          }
+        ]
+      },
+      "full": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/n7UjakT2tN75MFUsYfdMo5C8J37WNbPvoTXLisfS1wGP4UaWA/tmpkilgk8k3.jpeg",
+        "model": "Nano Banana 2",
+        "cost": "$0.10",
+        "costRaw": 0.10300000000000001,
+        "timeSeconds": 55.4,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/fobug49P6RRhZaQ6MgpiB2X51fd1IdflhY8PED5sNzkyup0sA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/wdRnaPeAajU9HCcZdYMN2luYk8SMGVUdP4IJUrtkxBkfvUaWA/tmp4lrq06sg.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/fobug49P6RRhZaQ6MgpiB2X51fd1IdflhY8PED5sNzkyup0sA/output.png",
+            "time": "1.2s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "canny",
+            "label": "Edge-Guided (Flux Canny Pro)",
+            "url": "https://replicate.delivery/xezq/UyCv5wq5e2U6K6eIUC26Xbtr2zFPfBsCfqMqebhvV5bB9mSzC/tmpzja6vpbu.jpg",
+            "time": "14.9s",
+            "model": "Flux Canny Pro",
+            "cost": "$0.05"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Nano Banana 2)",
+            "url": "https://replicate.delivery/xezq/n7UjakT2tN75MFUsYfdMo5C8J37WNbPvoTXLisfS1wGP4UaWA/tmpkilgk8k3.jpeg",
+            "time": "39.4s",
+            "model": "Nano Banana 2",
+            "cost": "$0.05"
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "name": "Vintage Brooch",
+      "referenceUrl": "https://replicate.delivery/xezq/wxG2w6AmQboWEFIyKxojzIbCAWXNVspVx91takDEyEOBMlmF/tmpgusi5tka.jpeg",
+      "referencePrompt": "Vintage art deco pearl and gold brooch with geometric design, antique jewelry photography, white background",
+      "creativeDirection": "Museum exhibition display on velvet cushion, gallery lighting with spot focus, prestigious presentation",
+      "simple": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/NIxIfH5wngT0Nyz4hekZhwXZ2cHiJ9ATgzNqVAfmyucIyp0sA/tmpzmdszibr.jpeg",
+        "model": "Nano Banana Pro",
+        "cost": "$0.14",
+        "costRaw": 0.137,
+        "timeSeconds": 52.4,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/9SNAqqZL2WpqCRrBlataTpegLNrGpgHf4Yv8SRWIwtiQ4UaWA/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/wxG2w6AmQboWEFIyKxojzIbCAWXNVspVx91takDEyEOBMlmF/tmpgusi5tka.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/9SNAqqZL2WpqCRrBlataTpegLNrGpgHf4Yv8SRWIwtiQ4UaWA/output.png",
+            "time": "1.1s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (NB Pro 2K)",
+            "url": "https://replicate.delivery/xezq/NIxIfH5wngT0Nyz4hekZhwXZ2cHiJ9ATgzNqVAfmyucIyp0sA/tmpzmdszibr.jpeg",
+            "time": "51.4s",
+            "model": "Nano Banana Pro",
+            "cost": "$0.13"
+          }
+        ]
+      },
+      "full": {
+        "success": false,
+        "error": "NB2 failed: Prediction failed: Director: unexpected error handling prediction (E9243)"
+      }
+    },
+    {
+      "id": 10,
+      "name": "Sapphire Bracelet",
+      "referenceUrl": "https://replicate.delivery/xezq/SsLxSBWO5JY7PNK8NCVIrPL6GTtDJHF1RZnB7W1fQ22LYKNLA/tmpfsyqjrmu.jpeg",
+      "referencePrompt": "Blue sapphire and white gold tennis bracelet, professional jewelry photography, white background, every stone visible",
+      "creativeDirection": "Artistic editorial, piece laid on raw silk fabric, shallow depth of field, dreamy bokeh, warm palette",
+      "simple": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/WtXJ18uwSf08BqtDyMERflncfeAsfVQFlieGLAgsyNeg4cKNLA/tmpk5ulkyqk.jpeg",
+        "model": "Nano Banana Pro",
+        "cost": "$0.14",
+        "costRaw": 0.137,
+        "timeSeconds": 45.2,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/hKyVgeBehuomCkIDUi1seWsUPof2AUi4hxHbVfXDqvtoInSzC/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/SsLxSBWO5JY7PNK8NCVIrPL6GTtDJHF1RZnB7W1fQ22LYKNLA/tmpfsyqjrmu.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/hKyVgeBehuomCkIDUi1seWsUPof2AUi4hxHbVfXDqvtoInSzC/output.png",
+            "time": "0.9s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (NB Pro 2K)",
+            "url": "https://replicate.delivery/xezq/WtXJ18uwSf08BqtDyMERflncfeAsfVQFlieGLAgsyNeg4cKNLA/tmpk5ulkyqk.jpeg",
+            "time": "44.4s",
+            "model": "Nano Banana Pro",
+            "cost": "$0.13"
+          }
+        ]
+      },
+      "full": {
+        "success": true,
+        "resultUrl": "https://replicate.delivery/xezq/dn1pGdCcND4SH9043x1XtjlJzfnD9Yue9GbkGFnA6Lpy5UaWA/tmpzq30ddi8.jpeg",
+        "model": "Nano Banana 2",
+        "cost": "$0.10",
+        "costRaw": 0.10300000000000001,
+        "timeSeconds": 45.7,
+        "cleanedImageUrl": "https://replicate.delivery/yhqm/jJliSmwUN2qYJRQuIlU9kUwjhtVCMDOdlpxWNzIY3zWROlmF/output.png",
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://replicate.delivery/xezq/SsLxSBWO5JY7PNK8NCVIrPL6GTtDJHF1RZnB7W1fQ22LYKNLA/tmpfsyqjrmu.jpeg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://replicate.delivery/yhqm/jJliSmwUN2qYJRQuIlU9kUwjhtVCMDOdlpxWNzIY3zWROlmF/output.png",
+            "time": "1.4s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "canny",
+            "label": "Edge-Guided (Flux Canny Pro)",
+            "url": "https://replicate.delivery/xezq/S9smrftKl501GSVKj5oHuaHMuwQBckZ8JiuRFhcFP72qcKNLA/tmpgs6nimxb.jpg",
+            "time": "14.9s",
+            "model": "Flux Canny Pro",
+            "cost": "$0.05"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Nano Banana 2)",
+            "url": "https://replicate.delivery/xezq/dn1pGdCcND4SH9043x1XtjlJzfnD9Yue9GbkGFnA6Lpy5UaWA/tmpzq30ddi8.jpeg",
+            "time": "29.3s",
+            "model": "Nano Banana 2",
+            "cost": "$0.05"
+          }
+        ]
+      }
+    }
+  ],
+  "phase": "pipelines",
+  "lastCompleted": -1
+}

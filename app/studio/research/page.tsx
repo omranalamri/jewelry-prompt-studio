@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Telescope, ExternalLink, Lightbulb, Database, Wrench, BookOpen, Workflow, Eye, ArrowUpRight, FlaskConical, Link2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Telescope, ExternalLink, Lightbulb, Database, Wrench, BookOpen, Workflow, Eye, ArrowUpRight, FlaskConical, Link2, Loader2, Search, AtSign, Globe, MessageCircle, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { COMMUNITY_RESOURCES, CommunityResource } from '@/lib/creative/community-intel';
 
@@ -83,9 +84,58 @@ function ResourceCard({ resource }: { resource: CommunityResource }) {
   );
 }
 
+interface LiveFinding {
+  title: string;
+  source: string;
+  url: string | null;
+  summary: string;
+  relevanceScore: number;
+  category: string;
+  actionable: boolean;
+  suggestedAction: string | null;
+}
+
+const SOURCE_ICONS: Record<string, typeof Globe> = {
+  twitter: AtSign,
+  reddit: MessageCircle,
+  web: Globe,
+  default: Search,
+};
+
+const SOURCE_COLORS: Record<string, string> = {
+  twitter: 'text-sky-500 bg-sky-500/10 border-sky-500/20',
+  reddit: 'text-orange-500 bg-orange-500/10 border-orange-500/20',
+  web: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+  default: 'text-muted-foreground bg-muted border-muted',
+};
+
 export default function ResearchPage() {
   const [filter, setFilter] = useState<string>('all');
   const [impactFilter, setImpactFilter] = useState<string>('all');
+  const [scanning, setScanning] = useState(false);
+  const [liveFindings, setLiveFindings] = useState<LiveFinding[]>([]);
+  const [lastScan, setLastScan] = useState<string | null>(null);
+  const [scanScope, setScanScope] = useState<'quick' | 'full'>('quick');
+
+  const runScan = async () => {
+    setScanning(true);
+    try {
+      const res = await fetch('/api/research-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: scanScope }),
+      });
+      const json = await res.json();
+      if (json.success && json.data.findings) {
+        setLiveFindings(json.data.findings);
+        setLastScan(new Date().toLocaleString());
+        toast.success(json.data.message);
+      } else {
+        toast.error(json.data?.message || 'Scan produced no results');
+      }
+    } catch { toast.error('Research scan failed'); }
+    setScanning(false);
+  };
 
   const filtered = COMMUNITY_RESOURCES.filter(r =>
     (filter === 'all' || r.category === filter) &&
@@ -103,10 +153,104 @@ export default function ResearchPage() {
         <div>
           <h2 className="text-xl font-semibold">Research Hub</h2>
           <p className="text-sm text-muted-foreground">
-            Community intelligence — models, datasets, tools, and competitors to grow the platform.
+            Live intelligence from Twitter/X, Reddit, web — models, tools, trends, and competitors.
           </p>
         </div>
       </div>
+
+      {/* Live Scan Section */}
+      <Card className="border-gold/20 bg-gold/[0.02]">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-gold" />
+              <span className="text-sm font-semibold">Live Research Scan</span>
+              {lastScan && <span className="text-[10px] text-muted-foreground">Last: {lastScan}</span>}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setScanScope('quick')}
+                className={`text-[10px] px-2 py-1 rounded-full border ${scanScope === 'quick' ? 'border-gold bg-gold/10 text-gold' : ''}`}>
+                Quick (4 queries)
+              </button>
+              <button onClick={() => setScanScope('full')}
+                className={`text-[10px] px-2 py-1 rounded-full border ${scanScope === 'full' ? 'border-gold bg-gold/10 text-gold' : ''}`}>
+                Full (20 queries)
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-0.5"><AtSign className="h-3 w-3 text-sky-500" /> Twitter/X</span>
+            <span className="flex items-center gap-0.5"><MessageCircle className="h-3 w-3 text-orange-500" /> Reddit</span>
+            <span className="flex items-center gap-0.5"><Globe className="h-3 w-3 text-emerald-500" /> Web</span>
+            <span>— AI models, jewelry trends, competitors, techniques</span>
+          </div>
+          <Button onClick={runScan} disabled={scanning} className="w-full gold-gradient text-white border-0 h-10 text-sm">
+            {scanning ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning {scanScope === 'full' ? '20' : '4'} sources...</>
+              : <><Zap className="h-4 w-4 mr-2" /> Scan for Latest Intelligence</>}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Live Findings */}
+      <AnimatePresence>
+        {liveFindings.length > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gold">
+                Live Findings ({liveFindings.length})
+              </p>
+              <button onClick={() => setLiveFindings([])} className="text-[10px] text-muted-foreground hover:underline">Clear</button>
+            </div>
+            {liveFindings
+              .sort((a, b) => b.relevanceScore - a.relevanceScore)
+              .map((f, i) => {
+                const sourceKey = f.source?.toLowerCase().includes('twitter') || f.source?.toLowerCase().includes('x.com') ? 'twitter'
+                  : f.source?.toLowerCase().includes('reddit') ? 'reddit' : 'web';
+                const SourceIcon = SOURCE_ICONS[sourceKey] || SOURCE_ICONS.default;
+                const sourceColor = SOURCE_COLORS[sourceKey] || SOURCE_COLORS.default;
+                const cat = CATEGORY_CONFIG[f.category] || CATEGORY_CONFIG.tool;
+                const CatIcon = cat.icon;
+
+                return (
+                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
+                    <Card className={`border-l-4 ${f.relevanceScore >= 8 ? 'border-l-gold bg-gold/[0.02]' : f.relevanceScore >= 6 ? 'border-l-blue-400' : 'border-l-muted-foreground/30'}`}>
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                              <h4 className="font-medium text-xs">{f.title}</h4>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full border ${cat.color}`}>
+                                <CatIcon className="h-2 w-2 inline mr-0.5" />{cat.label}
+                              </span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full border ${sourceColor}`}>
+                                <SourceIcon className="h-2 w-2 inline mr-0.5" />{sourceKey}
+                              </span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted">
+                                {f.relevanceScore}/10
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">{f.summary}</p>
+                            {f.suggestedAction && (
+                              <div className="mt-1.5 p-1.5 rounded bg-gold/5 border border-gold/10">
+                                <p className="text-[10px]"><span className="font-medium text-gold">Action:</span> {f.suggestedAction}</p>
+                              </div>
+                            )}
+                          </div>
+                          {f.url && (
+                            <a href={f.url} target="_blank" rel="noreferrer"
+                              className="h-7 w-7 rounded-lg border flex items-center justify-center hover:bg-accent shrink-0">
+                              <ArrowUpRight className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">

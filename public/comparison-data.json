@@ -1,0 +1,408 @@
+{
+  "generatedAt": "2026-04-13T13:37:35.080Z",
+  "count": 5,
+  "hasInspirationImages": true,
+  "allPermanent": true,
+  "comparisons": [
+    {
+      "id": 1,
+      "name": "Gold Solitaire Ring",
+      "referenceUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/a89287b5-d17b-46a2-8ceb-8ce540afc1cc.jpg",
+      "referencePrompt": "Gold solitaire diamond engagement ring, 6 prong setting, 18k yellow gold, product photography, white background",
+      "creativeDirection": "On black velvet, dramatic side lighting, luxury magazine ad, golden highlights",
+      "inspirationUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/e74a4d79-0866-4435-8592-b4f710ea19c4.jpg",
+      "direct": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/23362418-27dc-4fc8-8296-589209515672.jpg",
+        "model": "Gemini (gemini-3.1-flash-image-preview)",
+        "cost": "$0.01",
+        "costRaw": 0.015,
+        "timeSeconds": 25.1,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/a89287b5-d17b-46a2-8ceb-8ce540afc1cc.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/e74a4d79-0866-4435-8592-b4f710ea19c4.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-3.1-flash-image-preview))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/23362418-27dc-4fc8-8296-589209515672.jpg",
+            "time": "25.1s",
+            "model": "Gemini (gemini-3.1-flash-image-preview)",
+            "cost": "$0.01"
+          }
+        ]
+      },
+      "simple": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/80cc2540-619d-43d4-93e2-1d63cce428bf.jpg",
+        "model": "Gemini (gemini-3.1-flash-image-preview)",
+        "cost": "$0.02",
+        "costRaw": 0.018,
+        "timeSeconds": 38.6,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/a89287b5-d17b-46a2-8ceb-8ce540afc1cc.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/e74a4d79-0866-4435-8592-b4f710ea19c4.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/pipeline/cb32bb0b-dcff-46bd-b919-f0109c97668b.png",
+            "time": "1.9s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-3.1-flash-image-preview))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/80cc2540-619d-43d4-93e2-1d63cce428bf.jpg",
+            "time": "36.7s",
+            "model": "Gemini (gemini-3.1-flash-image-preview)",
+            "cost": "$0.02"
+          }
+        ]
+      },
+      "full": {
+        "success": false,
+        "error": "Removed — Direct and Simple pipelines only"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Pearl Necklace",
+      "referenceUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/b478fd89-08b7-4c3e-bde1-e4bdd98554db.jpg",
+      "referencePrompt": "Elegant pearl strand necklace with gold clasp, perfectly round white pearls, product photography, white background",
+      "creativeDirection": "Lifestyle on elegant model, warm golden hour sunlight, romantic and aspirational",
+      "inspirationUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/d7a39c4e-51d1-4919-a679-9e04c0be10e8.jpg",
+      "direct": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/dfabfad9-4f8b-42b1-909e-7830b103389b.jpg",
+        "model": "Gemini (gemini-3.1-flash-image-preview)",
+        "cost": "$0.01",
+        "costRaw": 0.015,
+        "timeSeconds": 29.5,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/b478fd89-08b7-4c3e-bde1-e4bdd98554db.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/d7a39c4e-51d1-4919-a679-9e04c0be10e8.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-3.1-flash-image-preview))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/dfabfad9-4f8b-42b1-909e-7830b103389b.jpg",
+            "time": "29.5s",
+            "model": "Gemini (gemini-3.1-flash-image-preview)",
+            "cost": "$0.01"
+          }
+        ]
+      },
+      "simple": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/4ad42541-f3f6-4801-b185-528a65474be3.jpg",
+        "model": "Gemini (gemini-3.1-flash-image-preview)",
+        "cost": "$0.02",
+        "costRaw": 0.018,
+        "timeSeconds": 44.9,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/b478fd89-08b7-4c3e-bde1-e4bdd98554db.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/d7a39c4e-51d1-4919-a679-9e04c0be10e8.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/pipeline/b2745542-59dc-4f10-b364-49c987ba5c08.png",
+            "time": "1.3s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-3.1-flash-image-preview))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/4ad42541-f3f6-4801-b185-528a65474be3.jpg",
+            "time": "43.6s",
+            "model": "Gemini (gemini-3.1-flash-image-preview)",
+            "cost": "$0.02"
+          }
+        ]
+      },
+      "full": {
+        "success": false,
+        "error": "Removed — Direct and Simple pipelines only"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Diamond Studs",
+      "referenceUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/e777e66f-b511-459f-9a4d-ede7ceabdec7.jpg",
+      "referencePrompt": "Round brilliant diamond stud earrings in platinum prong setting, macro jewelry photography, white background",
+      "creativeDirection": "Extreme macro closeup showing every facet, studio ring light reflections",
+      "inspirationUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/60bcbe55-e8c1-4845-877e-ddf99a8608c3.jpg",
+      "direct": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/10a18092-1b3e-47d6-b922-86df4fcffcb3.jpg",
+        "model": "Gemini (gemini-3.1-flash-image-preview)",
+        "cost": "$0.01",
+        "costRaw": 0.015,
+        "timeSeconds": 35.5,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/e777e66f-b511-459f-9a4d-ede7ceabdec7.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/60bcbe55-e8c1-4845-877e-ddf99a8608c3.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-3.1-flash-image-preview))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/10a18092-1b3e-47d6-b922-86df4fcffcb3.jpg",
+            "time": "35.5s",
+            "model": "Gemini (gemini-3.1-flash-image-preview)",
+            "cost": "$0.01"
+          }
+        ]
+      },
+      "simple": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/10091036-dbbb-4122-9f5f-793aee7b5923.jpg",
+        "model": "Gemini (gemini-3.1-flash-image-preview)",
+        "cost": "$0.02",
+        "costRaw": 0.018,
+        "timeSeconds": 65.8,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/e777e66f-b511-459f-9a4d-ede7ceabdec7.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/60bcbe55-e8c1-4845-877e-ddf99a8608c3.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/pipeline/83e22132-b139-4ae0-b1d4-ae18dbc17b8b.png",
+            "time": "1.3s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-3.1-flash-image-preview))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/10091036-dbbb-4122-9f5f-793aee7b5923.jpg",
+            "time": "64.5s",
+            "model": "Gemini (gemini-3.1-flash-image-preview)",
+            "cost": "$0.02"
+          }
+        ]
+      },
+      "full": {
+        "success": false,
+        "error": "Removed — Direct and Simple pipelines only"
+      }
+    },
+    {
+      "id": 4,
+      "name": "Silver Bangle",
+      "referenceUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/c0f69a92-cf02-49eb-9dd1-bcfa5750e911.jpg",
+      "referencePrompt": "Sterling silver bangle bracelet with intricate filigree scrollwork pattern, product photography, white background",
+      "creativeDirection": "On white marble surface, soft morning window light, editorial minimalist elegance",
+      "inspirationUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/7e4b2a35-1cfd-468e-8b66-2efac41aca64.jpg",
+      "direct": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/710c62a3-a3de-4cca-9feb-488498b34947.jpg",
+        "model": "Gemini (gemini-3.1-flash-image-preview)",
+        "cost": "$0.01",
+        "costRaw": 0.015,
+        "timeSeconds": 43.5,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/c0f69a92-cf02-49eb-9dd1-bcfa5750e911.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/7e4b2a35-1cfd-468e-8b66-2efac41aca64.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-3.1-flash-image-preview))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/710c62a3-a3de-4cca-9feb-488498b34947.jpg",
+            "time": "43.5s",
+            "model": "Gemini (gemini-3.1-flash-image-preview)",
+            "cost": "$0.01"
+          }
+        ]
+      },
+      "simple": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/f88f5dab-fc18-4314-8a55-a5d114fbf010.jpg",
+        "model": "Gemini (gemini-3.1-flash-image-preview)",
+        "cost": "$0.02",
+        "costRaw": 0.018,
+        "timeSeconds": 42.6,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/c0f69a92-cf02-49eb-9dd1-bcfa5750e911.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/7e4b2a35-1cfd-468e-8b66-2efac41aca64.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/pipeline/c86f8fdb-309b-49d7-aa26-bcf53db9afc1.png",
+            "time": "1.6s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-3.1-flash-image-preview))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/f88f5dab-fc18-4314-8a55-a5d114fbf010.jpg",
+            "time": "41.1s",
+            "model": "Gemini (gemini-3.1-flash-image-preview)",
+            "cost": "$0.02"
+          }
+        ]
+      },
+      "full": {
+        "success": false,
+        "error": "Removed — Direct and Simple pipelines only"
+      }
+    },
+    {
+      "id": 5,
+      "name": "Ruby Pendant",
+      "referenceUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/b374e358-9030-4c95-bce5-51688ee59f2c.jpg",
+      "referencePrompt": "Oval ruby pendant necklace in yellow gold with diamond halo, professional jewelry photo, white background",
+      "creativeDirection": "Bold advertising shot, dramatic reflections on polished black surface, striking modern",
+      "inspirationUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/96254d25-4051-44e8-a507-4a4593cafce1.jpg",
+      "direct": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/eea3c234-f59e-4bd5-ab23-5422c6bba753.png",
+        "model": "Gemini (gemini-2.5-flash-image)",
+        "cost": "$0.01",
+        "costRaw": 0.015,
+        "timeSeconds": 13.3,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/b374e358-9030-4c95-bce5-51688ee59f2c.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/96254d25-4051-44e8-a507-4a4593cafce1.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-2.5-flash-image))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/eea3c234-f59e-4bd5-ab23-5422c6bba753.png",
+            "time": "13.3s",
+            "model": "Gemini (gemini-2.5-flash-image)",
+            "cost": "$0.01"
+          }
+        ]
+      },
+      "simple": {
+        "success": true,
+        "resultUrl": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/591b2000-69ab-4ada-a097-a048dad0ea9c.jpg",
+        "model": "Gemini (gemini-3.1-flash-image-preview)",
+        "cost": "$0.02",
+        "costRaw": 0.018,
+        "timeSeconds": 46.4,
+        "pipelineSteps": [
+          {
+            "step": "original",
+            "label": "Customer's Piece",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/b374e358-9030-4c95-bce5-51688ee59f2c.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "inspiration",
+            "label": "Style Inspiration",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/96254d25-4051-44e8-a507-4a4593cafce1.jpg",
+            "time": "0s"
+          },
+          {
+            "step": "bg-removal",
+            "label": "Background Removed (BiRefNet)",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/pipeline/dd7aa67b-e16a-43bf-9b43-f2b8b420834d.png",
+            "time": "1.2s",
+            "model": "BiRefNet",
+            "cost": "$0.003"
+          },
+          {
+            "step": "generate",
+            "label": "Final Output (Gemini (gemini-3.1-flash-image-preview))",
+            "url": "https://gmny2kqxmo0mfdh5.public.blob.vercel-storage.com/generated/591b2000-69ab-4ada-a097-a048dad0ea9c.jpg",
+            "time": "45.2s",
+            "model": "Gemini (gemini-3.1-flash-image-preview)",
+            "cost": "$0.02"
+          }
+        ]
+      },
+      "full": {
+        "success": false,
+        "error": "Removed — Direct and Simple pipelines only"
+      }
+    }
+  ]
+}

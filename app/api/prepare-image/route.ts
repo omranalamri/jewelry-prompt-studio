@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
 
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
-    // Remove background — isolate the jewelry piece
-    const output = await replicate.run('lucataco/remove-bg', {
+    // Remove background — isolate the jewelry piece (BiRefNet: best edge detail for jewelry)
+    const output = await replicate.run('men1scus/birefnet:f74986db0355b58403ed20963af156525e2891ea3c2d499bfbfb2a28cd87c5d7', {
       input: { image: imageUrl },
     });
 

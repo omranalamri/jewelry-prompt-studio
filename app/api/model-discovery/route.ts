@@ -20,9 +20,8 @@ async function scanReplicate(): Promise<{
     'stability-ai/stable-diffusion-3.5-large',
     'stability-ai/sdxl',
     'ideogram-ai/ideogram-v3-quality',
-    'luma/photon',
     'bytedance/sdxl-lightning-4step',
-    // Video models
+    // Video models (Luma removed — Veo only)
     'bytedance/seedance-1.5-pro',
     'bytedance/seedance-1-lite',
     'google/veo-3',
@@ -31,8 +30,6 @@ async function scanReplicate(): Promise<{
     'minimax/video-01-live',
     'tencent/hunyuan-video',
     'wan-ai/wan-2.1-i2v-480p',
-    'kwaai/kling-v2.0',
-    'luma/ray',
   ];
 
   for (const modelId of candidates) {

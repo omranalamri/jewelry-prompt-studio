@@ -182,7 +182,7 @@ export const COMMUNITY_RESOURCES: CommunityResource[] = [
     url: 'https://fal.ai',
     description: 'Professional-grade background removal trained on licensed data. Handles reflective/transparent surfaces better than basic rembg.',
     impact: 'medium',
-    impactReason: 'Our current remove-bg model (lucataco/remove-bg) may struggle with reflective jewelry. Bria is specifically trained for challenging surfaces.',
+    impactReason: 'We now use BiRefNet (men1scus/birefnet) which excels at fine edges. Bria offers 256-level alpha mattes for semi-transparent surfaces.',
     effort: 'easy',
     status: 'available',
     tags: ['background-removal', 'reflective-surfaces'],

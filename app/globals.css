@@ -268,3 +268,193 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.45 0.03 65);
 }
+
+/* ============================================
+   OBSIDIAN DESIGN SYSTEM — v2.0
+   Warm luxury dark, inspired by Dubai jewelry boutiques
+   ============================================ */
+
+:root {
+  /* Obsidian backgrounds — warm blacks, never pure */
+  --obs-void: #080807;
+  --obs-base: #0d0c0a;
+  --obs-raised: #111009;
+  --obs-elevated: #171510;
+  --obs-hover: #1e1b12;
+  --obs-active: #242015;
+
+  /* Gold palette */
+  --obs-gold-dim: #5a4510;
+  --obs-gold-muted: #8a6820;
+  --obs-gold: #c9a84c;
+  --obs-gold-bright: #e8c46a;
+  --obs-gold-highlight: #f5d98a;
+  --obs-gold-glow: rgba(201, 168, 76, 0.15);
+
+  /* Text */
+  --obs-text-primary: #f0ece0;
+  --obs-text-secondary: #a09880;
+  --obs-text-muted: #5a5448;
+  --obs-text-disabled: #2e2c26;
+  --obs-text-gold: #c9a84c;
+  --obs-text-on-gold: #0a0802;
+
+  /* Borders */
+  --obs-border-subtle: rgba(255, 255, 255, 0.04);
+  --obs-border-default: rgba(255, 255, 255, 0.08);
+  --obs-border-emphasis: rgba(255, 255, 255, 0.14);
+  --obs-border-gold: rgba(201, 168, 76, 0.25);
+  --obs-border-gold-strong: rgba(201, 168, 76, 0.5);
+
+  /* Semantic */
+  --obs-success: #3dba72;
+  --obs-success-bg: rgba(61, 186, 114, 0.08);
+  --obs-warning: #e8a030;
+  --obs-warning-bg: rgba(232, 160, 48, 0.08);
+  --obs-error: #e05252;
+  --obs-error-bg: rgba(224, 82, 82, 0.08);
+  --obs-info: #6a8fff;
+
+  /* Agent colors — 10 agents, unique identities */
+  --agent-layla: #c9a84c;     /* Creative Director — gold */
+  --agent-fatima: #3dba72;    /* Brand Compliance — emerald */
+  --agent-marcom: #6a8fff;    /* MarCom Strategist — sapphire */
+  --agent-amira: #ff8a65;     /* Arabic Copywriter — terracotta */
+  --agent-project: #a78bfa;   /* Project Lead — violet */
+  --agent-impact: #38bdf8;    /* Impact — sky */
+  --agent-business: #fb923c;  /* BizCon — amber */
+  --agent-taxonomy: #34d399;  /* Taxonomy — teal */
+  --agent-architect: #e879f9; /* Architect — fuchsia */
+  --agent-english: #f0ece0;   /* English Copy — warm white */
+  --agent-engagement: #fbbf24;/* Engagement Lead — yellow */
+
+  /* Shadows */
+  --obs-shadow-gold: 0 0 30px rgba(201, 168, 76, 0.12);
+  --obs-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --obs-shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.7);
+
+  /* Motion */
+  --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+  --duration-scene: 600ms;
+
+  /* Fonts */
+  --font-obsidian-display: 'Cormorant Garamond', Georgia, serif;
+  --font-obsidian-body: 'DM Sans', system-ui, sans-serif;
+  --font-obsidian-arabic: 'Noto Sans Arabic', 'DM Sans', sans-serif;
+  --font-obsidian-mono: 'JetBrains Mono', monospace;
+}
+
+/* Obsidian global utilities */
+.obs-bg-void { background: var(--obs-void); }
+.obs-bg-base { background: var(--obs-base); }
+.obs-bg-raised { background: var(--obs-raised); }
+.obs-bg-elevated { background: var(--obs-elevated); }
+.obs-bg-hover:hover { background: var(--obs-hover); }
+.obs-text-primary { color: var(--obs-text-primary); }
+.obs-text-secondary { color: var(--obs-text-secondary); }
+.obs-text-muted { color: var(--obs-text-muted); }
+.obs-text-gold { color: var(--obs-gold); }
+.obs-border { border: 1px solid var(--obs-border-default); }
+.obs-border-gold { border: 1px solid var(--obs-border-gold); }
+
+.obs-display { font-family: var(--font-obsidian-display); font-weight: 400; letter-spacing: -0.01em; }
+.obs-body { font-family: var(--font-obsidian-body); }
+.obs-mono { font-family: var(--font-obsidian-mono); font-weight: 300; }
+.obs-arabic { font-family: var(--font-obsidian-arabic); }
+
+.obs-gold-gradient {
+  background: linear-gradient(135deg, var(--obs-gold) 0%, var(--obs-gold-bright) 50%, var(--obs-gold) 100%);
+}
+
+.obs-gold-gradient-text {
+  background: linear-gradient(135deg, var(--obs-gold) 0%, var(--obs-gold-highlight) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Obsidian animations */
+@keyframes obs-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes obs-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes obs-pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes obs-think-dot {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes obs-drift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(8px, -6px) rotate(1deg); }
+  66% { transform: translate(-5px, 4px) rotate(-0.5deg); }
+}
+
+@keyframes obs-scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes obs-reveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0% 0 0); }
+}
+
+.obs-animate-fade-up { animation: obs-fade-up var(--duration-slow) var(--ease-luxury) forwards; }
+
+.obs-animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(201, 168, 76, 0.1) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: obs-shimmer 1.8s linear infinite;
+}
+
+.obs-animate-drift { animation: obs-drift 8s ease-in-out infinite; }
+
+.obs-animate-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid var(--obs-gold);
+  animation: obs-pulse-ring 2s var(--ease-luxury) infinite;
+  pointer-events: none;
+}
+
+.obs-think-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.obs-think-dots > span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--obs-gold);
+  animation: obs-think-dot 1.4s ease-in-out infinite;
+}
+.obs-think-dots > span:nth-child(2) { animation-delay: 0.16s; }
+.obs-think-dots > span:nth-child(3) { animation-delay: 0.32s; }
+
+/* Stagger children */
+.obs-stagger > * { opacity: 0; animation: obs-fade-up var(--duration-slow) var(--ease-luxury) forwards; }
+.obs-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.obs-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.obs-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.obs-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.obs-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.obs-stagger > *:nth-child(6) { animation-delay: 300ms; }
+.obs-stagger > *:nth-child(n+7) { animation-delay: 360ms; }

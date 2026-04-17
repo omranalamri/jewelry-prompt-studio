@@ -1,8 +1,18 @@
 import Link from 'next/link';
-import { Sparkles, Home, FolderOpen, History, DollarSign, Palette, Gem, Brain, Cpu, Telescope, Compass, Search } from 'lucide-react';
+import { Sparkles, Home, FolderOpen, History, DollarSign, Palette, Gem, Brain, Cpu, Telescope, Compass, Search, Camera, GitCompare, Users, ShieldCheck, Send, CreditCard } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { UserButton, SignInButton } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 
-export default function StudioLayout({ children }: { children: React.ReactNode }) {
+export default async function StudioLayout({ children }: { children: React.ReactNode }) {
+  const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  let userId: string | null = null;
+  if (clerkEnabled) {
+    try {
+      const a = await auth();
+      userId = a.userId;
+    } catch { /* no session */ }
+  }
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-50 border-b glass">
@@ -17,11 +27,19 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
           </Link>
           <nav className="flex items-center gap-0.5">
             {[
+              { href: '/studio/dashboard', icon: Sparkles, label: 'Home' },
               { href: '/studio', icon: Home, label: 'Studio' },
+              { href: '/studio/agents', icon: Users, label: 'Agents' },
+              { href: '/studio/campaign', icon: Camera, label: 'Campaign' },
               { href: '/studio/tryon', icon: Gem, label: 'Try-On' },
               { href: '/studio/repository', icon: FolderOpen, label: 'Repo' },
+              { href: '/studio/assets', icon: Search, label: 'DAM' },
+              { href: '/studio/compare', icon: GitCompare, label: 'Compare' },
+              { href: '/studio/governance', icon: ShieldCheck, label: 'Governance' },
+              { href: '/studio/publish', icon: Send, label: 'Publish' },
               { href: '/studio/brand', icon: Palette, label: 'Brand' },
               { href: '/studio/costs', icon: DollarSign, label: 'Costs' },
+              { href: '/billing', icon: CreditCard, label: 'Billing' },
               { href: '/studio/learn', icon: Brain, label: 'Learn' },
               { href: '/studio/models', icon: Cpu, label: 'Models' },
               { href: '/studio/research', icon: Telescope, label: 'Research' },
@@ -35,8 +53,18 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
                 <span className="hidden sm:inline">{label}</span>
               </Link>
             ))}
-            <div className="ml-1 border-l pl-1">
+            <div className="ml-1 border-l pl-1 flex items-center gap-1">
               <ThemeToggle />
+              {clerkEnabled && userId && (
+                <UserButton appearance={{ elements: { avatarBox: 'h-7 w-7' } }} />
+              )}
+              {clerkEnabled && !userId && (
+                <SignInButton mode="modal">
+                  <button className="text-xs px-3 py-1.5 rounded-lg bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20">
+                    Sign in
+                  </button>
+                </SignInButton>
+              )}
             </div>
           </nav>
         </div>

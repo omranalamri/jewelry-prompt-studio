@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
+import { saveToBlob } from '@/lib/blob-storage';
+
+export const maxDuration = 60;
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
@@ -41,16 +44,21 @@ export async function POST(req: NextRequest) {
       return errorResponse('MISSING_FIELDS', 'Category, title, and imageUrl are required.', 400);
     }
 
+    // Rehost temporary URLs to permanent Vercel Blob storage
+    const permanentUrl = await saveToBlob(imageUrl, category);
+
     const sql = getDb();
+    const metaJson = metadata ? JSON.stringify(metadata) : '{}';
     const data = await sql`
       INSERT INTO repository (category, title, description, image_url, tags, metadata)
-      VALUES (${category}, ${title}, ${description || null}, ${imageUrl}, ${tags || []}, ${JSON.stringify(metadata || {})})
+      VALUES (${category}, ${title}, ${description || null}, ${permanentUrl}, ${tags || []}, ${metaJson}::jsonb)
       RETURNING *
     `;
 
     return Response.json({ success: true, data: data[0] });
   } catch (error) {
     console.error('Repository save error:', error);
-    return errorResponse('DB_ERROR', 'Could not save to repository.', 500);
+    const msg = error instanceof Error ? error.message : 'Unknown';
+    return errorResponse('DB_ERROR', `Save failed: ${msg.slice(0, 100)}`, 500);
   }
 }

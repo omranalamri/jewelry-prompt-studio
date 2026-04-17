@@ -48,15 +48,6 @@ export async function POST(req: NextRequest) {
             const data = await response.json();
             resultUrl = data.data?.[0]?.url;
             if (!resultUrl) throw new Error('No image');
-          } else if (modelInfo.id === 'flux-ultra') {
-            const output = await replicate.run('black-forest-labs/flux-1.1-pro-ultra', {
-              input: {
-                prompt: referenceImageUrl ? `Transform this jewelry photo, keep exact piece unchanged: ${cleanPrompt}` : cleanPrompt,
-                aspect_ratio: ar, raw: true, output_format: 'jpg',
-                ...(referenceImageUrl && { image_prompt: referenceImageUrl, image_prompt_strength: 0.7 }),
-              },
-            });
-            resultUrl = typeof output === 'string' ? output : String(output);
           } else {
             const output = await replicate.run(modelInfo.replicateId as `${string}/${string}`, {
               input: {

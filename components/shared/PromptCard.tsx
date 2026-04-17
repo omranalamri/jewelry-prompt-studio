@@ -67,7 +67,7 @@ export function PromptCard({ platform, prompt, isRecommended, onSave, showGenera
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              {prompt.split(/\s+/).length} words
+              {(prompt || '').split(/\s+/).length} words
             </span>
             {onSave && (
               <Button variant="ghost" size="sm" onClick={onSave} className="text-xs h-7">

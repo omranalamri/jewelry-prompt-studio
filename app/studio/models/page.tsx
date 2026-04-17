@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Cpu, Search, CheckCircle, XCircle, FlaskConical, RefreshCw, Image as ImageIcon, Video, Volume2, ImagePlus } from 'lucide-react';
+import { Cpu, Search, CheckCircle, XCircle, FlaskConical, RefreshCw, Image as ImageIcon, Video, Volume2, ImagePlus, Star, Layers, Scissors, Sun, Type, Box, ScanLine, Palette } from 'lucide-react';
+import { MODEL_CATALOG, type CatalogModel } from '@/lib/creative/model-catalog';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -188,6 +189,70 @@ export default function ModelsPage() {
             </motion.div>
           );
         })}
+      </div>
+
+      {/* ===== FULL MODEL CATALOG ===== */}
+      <div className="border-t pt-6 mt-6 space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">Model Catalog</h2>
+          <p className="text-sm text-muted-foreground">25 Replicate models for jewelry marketing — organized by priority.</p>
+        </div>
+
+        {([1, 2, 3] as const).map(tier => {
+          const tierModels = MODEL_CATALOG.filter(m => m.tier === tier);
+          const tierLabels = { 1: 'Tier 1 — Must Have', 2: 'Tier 2 — High Value', 3: 'Tier 3 — Nice to Have' };
+          const tierColors = { 1: 'border-gold/30 bg-gold/[0.02]', 2: 'border-blue-500/20 bg-blue-500/[0.02]', 3: 'border-muted' };
+
+          const catIcons: Record<string, typeof ImageIcon> = {
+            'image-gen': ImageIcon, 'video-gen': Video, 'bg-removal': Scissors,
+            'upscale': Layers, 'editing': Palette, 'lighting': Sun,
+            'captioning': Type, 'try-on': ScanLine, 'segmentation': Box,
+            'lora': FlaskConical, '3d': Box, 'ocr': Type,
+          };
+
+          return (
+            <div key={tier} className="space-y-2">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                {tier === 1 && <Star className="h-4 w-4 text-gold" />}
+                {tierLabels[tier]}
+                <span className="text-muted-foreground font-normal">({tierModels.length} models)</span>
+              </h3>
+              <div className="space-y-1.5">
+                {tierModels.map(m => {
+                  const CatIcon = catIcons[m.category] || ImageIcon;
+                  return (
+                    <div key={m.id} className={`p-3 rounded-lg border ${tierColors[tier]} flex items-start justify-between gap-3`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-medium text-xs">{m.name}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            <CatIcon className="h-2 w-2 inline mr-0.5" />{m.category}
+                          </span>
+                          {m.integrated && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+                              <CheckCircle className="h-2 w-2 inline mr-0.5" />Active
+                            </span>
+                          )}
+                          <span className="text-[9px] text-muted-foreground font-mono">{m.costEstimate}</span>
+                          {m.runs > 0 && <span className="text-[9px] text-muted-foreground">{(m.runs / 1_000_000).toFixed(1)}M runs</span>}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{m.description}</p>
+                        <p className="text-[10px] mt-0.5"><span className="text-gold font-medium">Use:</span> {m.jewelryUseCase}</p>
+                      </div>
+                      <span className="text-[8px] font-mono text-muted-foreground shrink-0 max-w-[140px] truncate">{m.replicateId}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+
+        <div className="p-3 rounded-lg bg-muted/50 border text-center">
+          <p className="text-xs text-muted-foreground">
+            {MODEL_CATALOG.filter(m => m.integrated).length} integrated · {MODEL_CATALOG.filter(m => !m.integrated).length} available to add · {MODEL_CATALOG.length} total
+          </p>
+        </div>
       </div>
     </motion.div>
   );

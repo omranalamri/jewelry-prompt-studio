@@ -7,6 +7,7 @@ import React from 'react';
 
 // Render chat messages with basic formatting: **bold**, bullet points, numbered lists
 function FormattedMessage({ text, isUser }: { text: string; isUser: boolean }) {
+  if (!text) return <>No response.</>;
   if (isUser) return <>{text}</>;
 
   // Split into paragraphs
@@ -54,6 +55,7 @@ function FormattedMessage({ text, isUser }: { text: string; isUser: boolean }) {
 }
 
 function formatInline(text: string): React.ReactNode {
+  if (!text) return null;
   // Handle **bold** text
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
@@ -199,8 +201,10 @@ export function ChatTab({
       const data = json.data as Record<string, unknown>;
       setCurrentPhase((data.phase as string) || null);
 
+      // Handle both Claude (data.message) and Gemini fallback (data.content)
+      const aiContent = (data.message || data.content || 'No response.') as string;
       setMessages(prev => [...prev, {
-        role: 'assistant', content: data.message as string,
+        role: 'assistant', content: aiContent,
         rawJson: json.rawJson, phase: data.phase as string,
       }]);
 

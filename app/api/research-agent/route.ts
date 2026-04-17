@@ -12,18 +12,27 @@ const RESEARCH_QUERIES = [
   { query: 'best AI image generation model jewelry product photography 2026', source: 'web', category: 'model' },
   { query: 'AI video generation jewelry marketing ads new model 2026', source: 'web', category: 'model' },
   { query: 'huggingface trending image-to-video jewelry product', source: 'web', category: 'model' },
+  { query: 'Replicate new models image generation April 2026', source: 'web', category: 'model' },
   // Tools and techniques
   { query: 'virtual try-on jewelry ring necklace AI open source github', source: 'web', category: 'tool' },
   { query: 'AI background removal reflective jewelry metal gemstone', source: 'web', category: 'tool' },
-  { query: 'LoRA fine-tune jewelry product photography flux stable diffusion', source: 'web', category: 'technique' },
-  // Community feedback
+  { query: 'LoRA fine-tune jewelry product photography AI model training', source: 'web', category: 'technique' },
+  { query: 'AI batch campaign creatives multiple angles same product consistent', source: 'web', category: 'technique' },
+  // Twitter/X — AI model announcements and jewelry trends
+  { query: 'site:x.com OR site:twitter.com new AI image generation model 2026', source: 'twitter', category: 'model' },
+  { query: 'site:x.com OR site:twitter.com Replicate new model image video', source: 'twitter', category: 'model' },
+  { query: 'site:x.com OR site:twitter.com AI jewelry photography product marketing', source: 'twitter', category: 'trend' },
+  { query: 'site:x.com OR site:twitter.com AI video generation product ad campaign', source: 'twitter', category: 'trend' },
+  // Community feedback — Reddit + social
   { query: 'site:reddit.com AI jewelry photography product generation quality', source: 'reddit', category: 'feedback' },
   { query: 'site:reddit.com best AI model jewelry video ad 2026', source: 'reddit', category: 'feedback' },
   { query: 'site:reddit.com AI product photography gemstone diamond hallucination fix', source: 'reddit', category: 'feedback' },
+  { query: 'site:reddit.com AI batch generate multiple angles same product consistent', source: 'reddit', category: 'feedback' },
   // Competitors
   { query: 'FormaNova AI jewelry review 2026', source: 'web', category: 'competitor' },
   { query: 'Mintly jewelry AI ads review feedback', source: 'web', category: 'competitor' },
   { query: 'AI jewelry creative platform new launch 2026', source: 'web', category: 'competitor' },
+  { query: 'Freepik AI jewelry campaign batch generation', source: 'web', category: 'competitor' },
 ];
 
 async function searchWeb(query: string): Promise<string> {

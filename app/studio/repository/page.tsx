@@ -19,6 +19,8 @@ interface RepoItem {
   prompt_text?: string | null;
   model_used?: string | null;
   reference_url?: string | null;
+  cleaned_image_url?: string | null;
+  pipeline_steps?: { step: string; label: string; url: string; time?: string; model?: string; cost?: string }[] | null;
   generation_id?: string | null;
 }
 
@@ -29,6 +31,8 @@ const CATEGORIES = [
   { id: 'mood', label: 'Mood Boards', icon: Palette },
   { id: 'model', label: 'Models', icon: User },
   { id: 'generated', label: 'Generated', icon: Sparkles },
+  { id: 'campaign', label: 'Campaigns', icon: Camera },
+  { id: 'video', label: 'Videos', icon: Play },
   { id: 'scene', label: 'Scenes', icon: ImageIcon },
 ];
 
@@ -267,7 +271,8 @@ export default function RepositoryPage() {
                         onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
                         onMouseLeave={(e) => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }} />
                     ) : (
-                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%23111" width="200" height="200"/><text x="100" y="105" text-anchor="middle" fill="%23555" font-size="14">Expired</text></svg>'; }} />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     {(item.image_url.includes('.mp4') || item.tags?.includes('video')) && (
@@ -342,14 +347,55 @@ export default function RepositoryPage() {
                 )}
               </div>
 
-              {/* Lineage — reference image if exists */}
-              {selectedItem.reference_url && (
+              {/* Pipeline Lineage — show the full journey */}
+              {selectedItem.pipeline_steps && selectedItem.pipeline_steps.length > 0 ? (
+                <div className="px-4 pt-3 pb-2 border-t">
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-2">Pipeline Lineage</p>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {selectedItem.pipeline_steps.map((step, idx) => (
+                      <div key={idx} className="flex items-center gap-2 shrink-0">
+                        <div className="text-center">
+                          <div className="relative">
+                            <img src={step.url} alt={step.label} className="h-16 w-16 object-cover rounded-lg border shadow-sm" />
+                            <span className="absolute -top-1 -left-1 h-4 w-4 rounded-full gold-gradient text-white text-[8px] font-bold flex items-center justify-center">{idx + 1}</span>
+                          </div>
+                          <p className="text-[9px] font-medium mt-1 max-w-[70px] truncate">{step.label}</p>
+                          {step.time && step.time !== 'auto' && step.time !== '0s' && (
+                            <p className="text-[8px] text-muted-foreground">{step.time}{step.cost ? ` · ${step.cost}` : ''}</p>
+                          )}
+                        </div>
+                        {idx < (selectedItem.pipeline_steps?.length || 0) - 1 && (
+                          <span className="text-muted-foreground text-lg shrink-0">→</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : selectedItem.reference_url ? (
                 <div className="px-4 pt-3 pb-1 border-t">
                   <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5">Reference Used</p>
-                  <img src={selectedItem.reference_url} alt="Reference" className="h-16 w-16 object-cover rounded-lg border inline-block" />
-                  <span className="text-xs text-muted-foreground ml-2">→ produced this output</span>
+                  <div className="flex items-center gap-3">
+                    <div className="text-center">
+                      <img src={selectedItem.reference_url} alt="Original" className="h-14 w-14 object-cover rounded-lg border" />
+                      <p className="text-[8px] text-muted-foreground mt-0.5">Original</p>
+                    </div>
+                    <span className="text-muted-foreground">→</span>
+                    {selectedItem.cleaned_image_url && selectedItem.cleaned_image_url !== selectedItem.reference_url && (
+                      <>
+                        <div className="text-center">
+                          <img src={selectedItem.cleaned_image_url} alt="Cleaned" className="h-14 w-14 object-cover rounded-lg border bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiNmNWY1ZjUiLz48cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZTBlMGUwIi8+PHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjQiIGhlaWdodD0iNCIgZmlsbD0iI2UwZTBlMCIvPjwvc3ZnPg==')]" />
+                          <p className="text-[8px] text-muted-foreground mt-0.5">BG Removed</p>
+                        </div>
+                        <span className="text-muted-foreground">→</span>
+                      </>
+                    )}
+                    <div className="text-center">
+                      <img src={selectedItem.image_url} alt="Result" className="h-14 w-14 object-cover rounded-lg border" />
+                      <p className="text-[8px] text-muted-foreground mt-0.5">Generated</p>
+                    </div>
+                  </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Info bar */}
               <div className="p-4 border-t space-y-2">

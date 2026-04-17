@@ -1,0 +1,196 @@
+{
+  "generatedAt": "2026-04-12T15:45:06.023Z",
+  "count": 19,
+  "models": [
+    {
+      "name": "Aria",
+      "gender": "female",
+      "tags": [
+        "young",
+        "european",
+        "brunette"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/LPS7cUhDPWJKC5nauCmJ2u8qf1kGaBQGKqGFfXSbCWz18WaWA/tmpcsx4rf1u.jpeg"
+    },
+    {
+      "name": "Amara",
+      "gender": "female",
+      "tags": [
+        "young",
+        "african",
+        "short-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/pnn5Bd8n6FpRKB6OfBq9nyXtpoWgiosM6vkYPScLLZ9YeWaWA/tmpa1tx50yb.jpeg"
+    },
+    {
+      "name": "Lin",
+      "gender": "female",
+      "tags": [
+        "young",
+        "east-asian",
+        "straight-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/Ilv7vQmPSfyKKCT6CVT3SmGye9fq2volSMIEeBDBPI1U3bpZB/tmpxg72jcuf.jpeg"
+    },
+    {
+      "name": "Sofia",
+      "gender": "female",
+      "tags": [
+        "mature",
+        "latina",
+        "wavy-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/O1GDMpAciUK2C131fSswgrL40jkJSXGZ7hYDC8MSZNU9eWaWA/tmpl8703nx1.jpeg"
+    },
+    {
+      "name": "Freya",
+      "gender": "female",
+      "tags": [
+        "young",
+        "scandinavian",
+        "blonde"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/VYPKB1x4yqbxI1ZqyeJbpV0gUxyVikSWTCgA7HbtDNv7eWaWA/tmp4yr6ca6d.jpeg"
+    },
+    {
+      "name": "Nadia",
+      "gender": "female",
+      "tags": [
+        "mature",
+        "middle-eastern",
+        "dark-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/Kq59cRtn9hILNRUO5bB3ZOLvzRVkXSxZf0hrHNFCJrWKfWaWA/tmpfb6lpuef.jpeg"
+    },
+    {
+      "name": "Maya",
+      "gender": "female",
+      "tags": [
+        "young",
+        "mixed",
+        "curly-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/FGlnxJloRPphGxogEDlYfZBfBl66JfiXPJIiFWEJ7Tbd8t0sA/tmpg5pqw9up.jpeg"
+    },
+    {
+      "name": "Victoria",
+      "gender": "female",
+      "tags": [
+        "mature",
+        "european",
+        "red-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/yfNLfuU50Hjhs0ff3ratLHSI99eggtGeKUQSGfXJcp81PfWaWA/tmpknvml1kl.jpeg"
+    },
+    {
+      "name": "Keiko",
+      "gender": "female",
+      "tags": [
+        "mature",
+        "japanese",
+        "updo"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/tC8A3NKsHz6gEtTFG3KfF8e6h3zGfhgArO4rw674OhBn9t0sA/tmpu8s0aqg1.jpeg"
+    },
+    {
+      "name": "James",
+      "gender": "male",
+      "tags": [
+        "young",
+        "european",
+        "dark-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/xbuAx2J7MFppLdeRQUSinRUULDdPsJfnl22fCXajdklo9t0sA/tmptv22fonv.jpeg"
+    },
+    {
+      "name": "Kofi",
+      "gender": "male",
+      "tags": [
+        "young",
+        "african",
+        "bald"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/pk7PwMUpJ8JeDCH9fW1V3Kh5EJYiUJL0ySDjd4rdUFo1et0sA/tmpi4amvwny.jpeg"
+    },
+    {
+      "name": "Raj",
+      "gender": "male",
+      "tags": [
+        "young",
+        "south-asian",
+        "beard"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/de494zaTfHvespnIySmasq1rUX7AB3aJvnrC4Ng6dfSD9bpZB/tmp6qc6rrf7.jpeg"
+    },
+    {
+      "name": "Chen",
+      "gender": "male",
+      "tags": [
+        "young",
+        "east-asian",
+        "clean-cut"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/9wMIr8w6t1KzCx3cxzZlKdLRgzggF5s3bkESs8IHjD5yvlmF/tmppcpf_wn9.jpeg"
+    },
+    {
+      "name": "Marco",
+      "gender": "male",
+      "tags": [
+        "mature",
+        "mediterranean",
+        "stubble"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/rCj6fmx4vD05bSdBk0q1T0MSbMHNwQJmyl9i4OWGJp3lfWaWA/tmpka0gkarg.jpeg"
+    },
+    {
+      "name": "Erik",
+      "gender": "male",
+      "tags": [
+        "mature",
+        "scandinavian",
+        "blonde"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/EMxMhdeseBl3g0ol6J4nwOFVSKIbdAO8WKlZtDre1OJHfbpZB/tmplioar3yb.jpeg"
+    },
+    {
+      "name": "Omar",
+      "gender": "male",
+      "tags": [
+        "young",
+        "middle-eastern",
+        "dark-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/NQbEYzyfUsVlZSnRSwJAMIxDuO8hMXPSGkUBsLbTOcS0fWaWA/tmp7bqm4uvs.jpeg"
+    },
+    {
+      "name": "Diego",
+      "gender": "male",
+      "tags": [
+        "young",
+        "latino",
+        "wavy-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/10gFMzhzn9bed6S8fU11XniUxWbgdV582Na8YSDp39Slft0sA/tmp5noncmkl.jpeg"
+    },
+    {
+      "name": "Akira",
+      "gender": "male",
+      "tags": [
+        "mature",
+        "japanese",
+        "styled"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/aK8RvLXoU5aqB5wmRhicHEg7f6XMSlfCqRdfewP5RqCGAcpZB/tmpwiq1d5ie.jpeg"
+    },
+    {
+      "name": "Liam",
+      "gender": "male",
+      "tags": [
+        "young",
+        "irish",
+        "red-hair"
+      ],
+      "imageUrl": "https://replicate.delivery/xezq/vt2FiHozSFadNBlPHj0Ojvln49xiI9ql9neIf0LckWB8ft0sA/tmpvvnq6dyy.jpeg"
+    }
+  ]
+}
