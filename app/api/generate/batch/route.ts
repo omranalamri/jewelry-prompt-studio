@@ -5,6 +5,8 @@ import { logCost } from '@/lib/cost-tracker';
 import { getDb } from '@/lib/db';
 import { trackGeneration } from '@/lib/learning/generation-tracker';
 import { validatePrompt } from '@/lib/jewelry/validation';
+import { guardRoute } from '@/lib/auth/route-guard';
+import { logError } from '@/lib/observability/logger';
 
 export const maxDuration = 300;
 
@@ -13,6 +15,9 @@ function errorResponse(code: string, message: string, status: number) {
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await guardRoute(req, { limiter: 'image', prefix: 'batch' });
+  if (!guard.ok) return guard.response;
+
   try {
     const { prompt, referenceImageUrl, count = 4, aspectRatio = '1:1' } = await req.json();
 
@@ -99,7 +104,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Batch error:', error);
+    logError(error, { route: '/api/generate/batch', actor: guard.actor.userId });
     return errorResponse('BATCH_FAILED', 'Batch generation failed.', 500);
   }
 }

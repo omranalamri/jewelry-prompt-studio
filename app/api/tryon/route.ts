@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import Replicate from 'replicate';
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
+import { guardRoute } from '@/lib/auth/route-guard';
+import { logError } from '@/lib/observability/logger';
 
 export const maxDuration = 120;
 
@@ -20,6 +22,9 @@ const TRYON_PROMPTS: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
+  const guard = await guardRoute(req, { limiter: 'image', prefix: 'tryon' });
+  if (!guard.ok) return guard.response;
+
   try {
     const { jewelryImageUrl, jewelryType, modelPreference, backgroundStyle } = await req.json();
 
@@ -78,7 +83,7 @@ CRITICAL: The jewelry piece must be IDENTICAL to the reference — same design, 
       },
     });
   } catch (error) {
-    console.error('Try-on error:', error);
+    logError(error, { route: '/api/tryon', actor: guard.actor.userId });
     return errorResponse('TRYON_FAILED', 'Virtual try-on failed. Please try again.', 500);
   }
 }

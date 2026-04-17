@@ -2,10 +2,15 @@ import { NextRequest } from 'next/server';
 import { stitchWithCreatomate, isCreatomateConfigured } from '@/lib/video/creatomate';
 import { saveToBlob } from '@/lib/blob-storage';
 import { getDb } from '@/lib/db';
+import { guardRoute } from '@/lib/auth/route-guard';
+import { logError } from '@/lib/observability/logger';
 
 export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
+  const guard = await guardRoute(req, { limiter: 'video', prefix: 'auto-stitch' });
+  if (!guard.ok) return guard.response;
+
   try {
     const body = await req.json();
 
@@ -54,7 +59,8 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
+    logError(err, { route: '/api/video/auto-stitch', actor: guard.actor.userId });
     const msg = err instanceof Error ? err.message : 'Unknown';
-    return Response.json({ success: false, error: msg }, { status: 500 });
+    return Response.json({ success: false, error: msg, code: 'AUTOSTITCH_FAILED' }, { status: 500 });
   }
 }

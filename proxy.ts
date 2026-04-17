@@ -29,6 +29,13 @@ const PROTECTED_PATTERNS = [
   '/api/agents(.*)',
   '/api/creative/extract',
   '/api/generate/from-facts',
+  '/api/generate/video',
+  '/api/generate/stitch',
+  '/api/generate/campaign',
+  '/api/generate/batch',
+  '/api/video/auto-stitch',
+  '/api/tryon',
+  '/api/campaigns/score-brief',
 ];
 
 const isProtectedRoute = createRouteMatcher(PROTECTED_PATTERNS);

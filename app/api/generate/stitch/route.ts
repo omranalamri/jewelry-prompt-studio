@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
-import { put } from '@vercel/blob';
 import { logCost } from '@/lib/cost-tracker';
 import { getDb } from '@/lib/db';
 import { generateVideo, formatCostGoogle, isGeminiConfigured, PRICING } from '@/lib/gemini';
 import { saveToBlob } from '@/lib/blob-storage';
+import { guardRoute } from '@/lib/auth/route-guard';
+import { logError } from '@/lib/observability/logger';
 
 export const maxDuration = 300;
 
@@ -18,6 +19,9 @@ interface StitchFrame {
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await guardRoute(req, { limiter: 'video', prefix: 'stitch' });
+  if (!guard.ok) return guard.response;
+
   try {
     const {
       frames,
@@ -133,7 +137,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Stitch error:', error);
+    logError(error, { route: '/api/generate/stitch', actor: guard.actor.userId });
     return errorResponse('STITCH_FAILED', 'Video stitching failed.', 500);
   }
 }

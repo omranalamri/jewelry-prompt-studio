@@ -4,6 +4,8 @@ import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
 import { validatePromptWithLearned as validatePrompt } from '@/lib/jewelry/validation';
 import { generateImage, formatCostGoogle, isGeminiConfigured } from '@/lib/gemini';
+import { guardRoute } from '@/lib/auth/route-guard';
+import { logError } from '@/lib/observability/logger';
 
 export const maxDuration = 300; // 5 min — batch generation
 
@@ -99,6 +101,11 @@ function getScenesForType(jewelryType: string): Scene[] {
 }
 
 export async function POST(req: NextRequest) {
+  // Campaign gen can produce up to 9 images × $0.05 = $0.45 per call.
+  // Image-tier rate limit (50/min) is appropriate here.
+  const guard = await guardRoute(req, { limiter: 'image', prefix: 'campaign' });
+  if (!guard.ok) return guard.response;
+
   try {
     const {
       productImageUrl,       // Customer's jewelry piece
@@ -234,7 +241,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Campaign generation error:', error);
+    logError(error, { route: '/api/generate/campaign', actor: guard.actor.userId });
     return errorResponse('CAMPAIGN_FAILED', 'Campaign generation failed.', 500);
   }
 }
