@@ -51,7 +51,8 @@ Ask about: how many pieces, what type of campaign (Instagram grid, product page,
 
 export async function POST(req: NextRequest) {
   const { messages } = await req.json();
-  const result = await handleChatRequest(messages, COLLECTION_PROMPT);
+  // Conversation mode — Q&A for collection setup, Haiku is enough
+  const result = await handleChatRequest(messages, COLLECTION_PROMPT, { mode: 'conversation' });
   if (!result.success) {
     return Response.json({ success: false, error: result.error, code: result.code }, { status: result.status });
   }

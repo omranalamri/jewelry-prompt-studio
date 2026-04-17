@@ -1,156 +1,245 @@
 import { NextRequest } from 'next/server';
-import Replicate from 'replicate';
-import { getBestImageModel, getImageModel, formatCost } from '@/lib/creative/model-registry';
+import { put } from '@vercel/blob';
 import { getDb } from '@/lib/db';
 import { logCost } from '@/lib/cost-tracker';
 import { trackGeneration } from '@/lib/learning/generation-tracker';
 import { validatePromptWithLearned as validatePrompt } from '@/lib/jewelry/validation';
+import { saveToBlob } from '@/lib/blob-storage';
+import { generateImage as geminiGenerateImage, isGeminiConfigured, formatCostGoogle } from '@/lib/gemini';
+import { getImageGenRateLimiter, checkRateLimit } from '@/lib/redis/client';
 
-export const maxDuration = 180;
+export const maxDuration = 300;
 
 function errorResponse(code: string, message: string, status: number) {
   return Response.json({ success: false, error: message, code }, { status });
 }
 
+// Save Gemini base64 → Blob
+async function saveGeminiToBlob(imageBase64: string, mimeType: string, prefix = 'generated'): Promise<string> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return '';
+  const buf = Buffer.from(imageBase64, 'base64');
+  const ext = mimeType.includes('png') ? 'png' : 'jpg';
+  const blob = await put(`${prefix}/${crypto.randomUUID()}.${ext}`, buf, { access: 'public', contentType: mimeType });
+  return blob.url;
+}
+
+interface PipelineStep { step: string; label: string; url: string; time: string; model?: string; cost?: string; }
+
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, platform, aspectRatio, model: requestedModelId, referenceImageUrl } = await req.json();
+    // Rate limit — 50 images/min per IP (if Redis configured)
+    const limiter = getImageGenRateLimiter();
+    if (limiter) {
+      const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'anonymous';
+      const rl = await checkRateLimit(limiter, ip.split(',')[0].trim());
+      if (rl && !rl.success) {
+        return Response.json(
+          { success: false, error: `Rate limit exceeded. ${rl.remaining}/${rl.limit} remaining. Retry in ${Math.ceil((rl.reset - Date.now()) / 1000)}s`, code: 'RATE_LIMIT' },
+          { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.reset - Date.now()) / 1000)) } }
+        );
+      }
+    }
+
+    const {
+      prompt, platform, aspectRatio,
+      referenceImageUrl, inspirationImageUrl,
+    } = await req.json();
 
     if (!prompt) return errorResponse('MISSING_PROMPT', 'No prompt.', 400);
-    if (!process.env.REPLICATE_API_TOKEN) return errorResponse('NOT_CONFIGURED', 'Not configured.', 503);
-
-    const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+    if (!isGeminiConfigured()) return errorResponse('NOT_CONFIGURED', 'Gemini API key not configured.', 503);
 
     // Clean and validate prompt
     let cleanPrompt = prompt
       .replace(/--ar\s+\S+/g, '').replace(/--style\s+\S+/g, '')
       .replace(/--v\s+\S+/g, '').replace(/--q\s+\S+/g, '')
       .replace(/--no\s+.*/g, '').trim();
-
     const validation = validatePrompt(cleanPrompt);
     if (validation.correctionCount > 0) cleanPrompt = validation.correctedPrompt;
 
     const arMatch = prompt.match(/--ar\s+(\d+:\d+)/);
     const ar = arMatch ? arMatch[1] : (aspectRatio || '1:1');
-
     const startTime = Date.now();
-    let resultUrl: string;
-    let modelName: string;
-    let modelId: string;
-    let cost: number;
-    let cleanedImageUrl: string | null = null;
 
-    // Can this URL be accessed by Replicate models?
-    const isAccessible = referenceImageUrl && (
-      referenceImageUrl.includes('replicate.com') ||
-      referenceImageUrl.includes('replicate.delivery') ||
-      referenceImageUrl.includes('caleums.com') ||
-      !referenceImageUrl.includes('blob.vercel-storage')
-    );
-
-    if (isAccessible && referenceImageUrl) {
-      // ============================================
-      // FULL PIPELINE: Customer uploaded their piece
-      // ============================================
-
-      // Step 1: Remove background — isolate the piece
+    // Save inspiration to repository if provided
+    if (inspirationImageUrl) {
       try {
-        const bgOutput = await replicate.run('lucataco/remove-bg', {
-          input: { image: referenceImageUrl },
-        });
-        cleanedImageUrl = typeof bgOutput === 'string' ? bgOutput : String(bgOutput);
-      } catch {
-        cleanedImageUrl = referenceImageUrl; // use original if BG removal fails
-      }
-
-      // Step 2: Flux Canny Pro — use the cleaned piece as edge guide
-      // This preserves the EXACT shape while applying the creative prompt
-      try {
-        const cannyOutput = await replicate.run('black-forest-labs/flux-canny-pro', {
-          input: {
-            prompt: `Professional jewelry photography: ${cleanPrompt}. Maintain exact jewelry design from reference.`,
-            control_image: cleanedImageUrl || referenceImageUrl,
-            output_format: 'jpg',
-            steps: 28,
-            guidance: 30,
-          },
-        });
-        resultUrl = typeof cannyOutput === 'string' ? cannyOutput : String(cannyOutput);
-        modelName = 'Flux Canny Pro';
-        modelId = 'flux-canny';
-        cost = 0.05 + (cleanedImageUrl !== referenceImageUrl ? 0.01 : 0); // BG removal cost
-      } catch {
-        // Fallback: Nano Banana 2 with image_input
-        try {
-          const nb2Output = await replicate.run('google/nano-banana-2', {
-            input: {
-              prompt: `Transform this jewelry photo: STRICTLY maintain exact original design. ${cleanPrompt}`,
-              image_input: [cleanedImageUrl || referenceImageUrl],
-              resolution: '1K', aspect_ratio: ar, output_format: 'jpg',
-            },
-          });
-          resultUrl = Array.isArray(nb2Output) ? String(nb2Output[0]) : String(nb2Output);
-          modelName = 'Nano Banana 2 (ref)';
-          modelId = 'nano-banana-2';
-          cost = 0.05;
-        } catch (e2) {
-          const msg = e2 instanceof Error ? e2.message : 'Unknown';
-          return errorResponse('GENERATION_FAILED', `Failed: ${msg.slice(0, 80)}. Try again shortly.`, 500);
-        }
-      }
-    } else {
-      // ============================================
-      // PROMPT ONLY: No reference or inaccessible URL
-      // ============================================
-      const modelInfo = requestedModelId ? (getImageModel(requestedModelId) || getBestImageModel()) : getBestImageModel();
-      try {
-        const output = await replicate.run(modelInfo.replicateId as `${string}/${string}`, {
-          input: {
-            prompt: cleanPrompt,
-            resolution: modelInfo.id === 'nano-banana-pro' ? '2K' : '1K',
-            aspect_ratio: ar, output_format: 'jpg',
-            ...(modelInfo.id === 'nano-banana-pro' && { safety_filter_level: 'block_only_high' }),
-          },
-        });
-        resultUrl = Array.isArray(output) ? String(output[0]) : String(output);
-        modelName = modelInfo.name;
-        modelId = modelInfo.id;
-        cost = modelInfo.costEstimate;
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Unknown';
-        return errorResponse('GENERATION_FAILED', `${msg.slice(0, 80)}. Try again shortly.`, 500);
-      }
+        const sql = getDb();
+        const permanentInspo = await saveToBlob(inspirationImageUrl, 'inspiration');
+        await sql`INSERT INTO repository (category, title, description, image_url, tags)
+          VALUES ('mood', ${`Inspiration — ${new Date().toLocaleDateString()}`}, ${cleanPrompt.slice(0, 200)}, ${permanentInspo}, ${['inspiration', 'mood', platform || 'image']})`;
+      } catch { /* */ }
     }
 
-    const elapsed = (Date.now() - startTime) / 1000;
+    if (referenceImageUrl) {
+      // ============================================
+      // SINGLE DIRECT PIPELINE
+      // Reference + Inspiration meshed together in Gemini 3 Pro
+      // (Users should upload jewelry on a white/clean background)
+      // ============================================
+      const imageInputs = inspirationImageUrl
+        ? [referenceImageUrl, inspirationImageUrl]
+        : [referenceImageUrl];
 
-    // Track
-    try {
-      const sql = getDb();
-      await sql`INSERT INTO repository (category, title, description, image_url, tags, prompt_text, model_used, reference_url)
-        VALUES ('generated', ${modelName + ' — ' + new Date().toLocaleDateString()}, ${cleanPrompt.slice(0, 300)}, ${resultUrl}, ${[platform || 'image', modelId]}, ${cleanPrompt}, ${modelName}, ${referenceImageUrl || null})`;
-    } catch { /* */ }
-    logCost({ model: modelName, type: 'image', cost, durationSeconds: elapsed, promptPreview: cleanPrompt, resultUrl });
-    const genId = await trackGeneration({
-      promptText: cleanPrompt, generationModel: modelId, generationType: 'image',
-      aspectRatio: ar, wasFirstChoice: true,
-      referenceImageUrl, resultUrl, cost, durationSeconds: elapsed,
-    });
+      const pipelineSteps: PipelineStep[] = [
+        { step: 'original', label: 'Customer\'s Piece', url: referenceImageUrl, time: '0s' },
+      ];
+      if (inspirationImageUrl) {
+        pipelineSteps.push({ step: 'inspiration', label: 'Style Inspiration', url: inspirationImageUrl, time: '0s' });
+      }
 
-    return Response.json({
-      success: true,
-      data: {
-        id: genId || crypto.randomUUID(),
-        provider: modelId, model: modelName, modelId, status: 'completed',
-        resultUrl, cost: formatCost(cost), costRaw: cost,
-        timeSeconds: parseFloat(elapsed.toFixed(1)),
-        hadReference: !!isAccessible,
-        cleanedImageUrl,
-        validation: validation.correctionCount > 0 ? { corrected: validation.correctionCount, issues: validation.issues.map(i => i.issue) } : null,
-      },
-    });
+      let resultUrl: string;
+      let modelName: string;
+      let generationCost: number;
+      try {
+        const genStart = Date.now();
+        const gem = await geminiGenerateImage(
+          `${cleanPrompt}. Maintain exact jewelry design, metal color, and proportions from the reference image.`,
+          imageInputs,
+        );
+        resultUrl = await saveGeminiToBlob(gem.imageBase64, gem.mimeType, 'generated');
+        generationCost = gem.cost;
+        modelName = `Gemini (${gem.model})`;
+        const genTime = ((Date.now() - genStart) / 1000).toFixed(1);
+        pipelineSteps.push({
+          step: 'generate',
+          label: `Generated (${gem.model})`,
+          url: resultUrl,
+          time: `${genTime}s`,
+          model: gem.model,
+          cost: `$${gem.cost.toFixed(3)}`,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unknown';
+        return errorResponse('GENERATION_FAILED', msg.slice(0, 200), 500);
+      }
+
+      const elapsed = (Date.now() - startTime) / 1000;
+
+      // Save to repository
+      try {
+        const sql = getDb();
+        await sql`INSERT INTO repository (category, title, description, image_url, tags, prompt_text, model_used, reference_url, pipeline_steps)
+          VALUES ('generated', ${`Generated — ${new Date().toLocaleDateString()}`}, ${cleanPrompt.slice(0, 300)}, ${resultUrl}, ${['generated', platform || 'image']}, ${cleanPrompt}, ${modelName}, ${referenceImageUrl}, ${JSON.stringify(pipelineSteps)})`;
+      } catch { /* */ }
+
+      logCost({ model: modelName, type: 'image', cost: generationCost, durationSeconds: elapsed, promptPreview: cleanPrompt, resultUrl });
+      const genId = await trackGeneration({
+        promptText: cleanPrompt,
+        generationModel: 'gemini-direct',
+        generationType: 'image',
+        aspectRatio: ar,
+        wasFirstChoice: true,
+        referenceImageUrl,
+        resultUrl,
+        cost: generationCost,
+        durationSeconds: elapsed,
+      });
+
+      return Response.json({
+        success: true,
+        data: {
+          id: genId || crypto.randomUUID(),
+          status: 'completed',
+          resultUrl,
+          model: modelName,
+          modelId: 'gemini-direct',
+          cost: formatCostGoogle(generationCost),
+          costRaw: generationCost,
+          timeSeconds: parseFloat(elapsed.toFixed(1)),
+          hadReference: true,
+          pipelineMode: 'direct',
+          pipelineSteps,
+          // Backwards-compat: keep direct/clean keys so existing UI code
+          // reading data.direct?.resultUrl / data.clean?.resultUrl doesn't crash
+          direct: {
+            resultUrl,
+            model: modelName,
+            cost: formatCostGoogle(generationCost),
+            costRaw: generationCost,
+            timeSeconds: parseFloat(elapsed.toFixed(1)),
+            pipelineSteps,
+          },
+          clean: null,
+          cleanedImageUrl: null,
+          validation: validation.correctionCount > 0
+            ? { corrected: validation.correctionCount, issues: validation.issues.map(i => i.issue) }
+            : null,
+        },
+      });
+
+    } else {
+      // ============================================
+      // PROMPT ONLY: Single Gemini generation, no reference
+      // ============================================
+      const pipelineSteps: PipelineStep[] = [];
+      let resultUrl: string;
+      let modelName: string;
+      let cost: number;
+
+      try {
+        const genStart = Date.now();
+        const gem = await geminiGenerateImage(cleanPrompt);
+        resultUrl = await saveGeminiToBlob(gem.imageBase64, gem.mimeType, 'generated');
+        cost = gem.cost;
+        modelName = `Gemini (${gem.model})`;
+        const genTime = ((Date.now() - genStart) / 1000).toFixed(1);
+        pipelineSteps.push({
+          step: 'generate',
+          label: `Generated (${modelName})`,
+          url: resultUrl,
+          time: `${genTime}s`,
+          model: modelName,
+          cost: formatCostGoogle(cost),
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unknown';
+        return errorResponse('GENERATION_FAILED', `${msg.slice(0, 80)}`, 500);
+      }
+
+      const elapsed = (Date.now() - startTime) / 1000;
+
+      try {
+        const sql = getDb();
+        await sql`INSERT INTO repository (category, title, description, image_url, tags, prompt_text, model_used, pipeline_steps)
+          VALUES ('generated', ${`${modelName} — ${new Date().toLocaleDateString()}`}, ${cleanPrompt.slice(0, 300)}, ${resultUrl}, ${['generated', 'prompt-only', platform || 'image']}, ${cleanPrompt}, ${modelName}, ${JSON.stringify(pipelineSteps)})`;
+      } catch { /* */ }
+
+      logCost({ model: modelName, type: 'image', cost, durationSeconds: elapsed, promptPreview: cleanPrompt, resultUrl });
+      const genId = await trackGeneration({
+        promptText: cleanPrompt,
+        generationModel: 'gemini-direct',
+        generationType: 'image',
+        aspectRatio: ar,
+        wasFirstChoice: true,
+        resultUrl,
+        cost,
+        durationSeconds: elapsed,
+      });
+
+      return Response.json({
+        success: true,
+        data: {
+          id: genId || crypto.randomUUID(),
+          provider: 'gemini-direct',
+          model: modelName,
+          modelId: 'gemini-direct',
+          status: 'completed',
+          resultUrl,
+          cost: formatCostGoogle(cost),
+          costRaw: cost,
+          timeSeconds: parseFloat(elapsed.toFixed(1)),
+          hadReference: false,
+          pipelineMode: 'prompt-only',
+          pipelineSteps,
+          validation: validation.correctionCount > 0
+            ? { corrected: validation.correctionCount, issues: validation.issues.map(i => i.issue) }
+            : null,
+        },
+      });
+    }
   } catch (error) {
     console.error('Image gen error:', error);
-    return errorResponse('GENERATION_FAILED', 'Failed.', 500);
+    const msg = error instanceof Error ? error.message : String(error);
+    return errorResponse('GENERATION_FAILED', `Failed: ${msg.slice(0, 200)}`, 500);
   }
 }

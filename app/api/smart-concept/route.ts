@@ -6,7 +6,8 @@ export const maxDuration = 90;
 
 export async function POST(req: NextRequest) {
   const { messages } = await req.json();
-  const result = await handleChatRequest(messages, SMART_CONCEPT_PROMPT);
+  // Synthesis mode — concept generation is a final creative deliverable
+  const result = await handleChatRequest(messages, SMART_CONCEPT_PROMPT, { mode: 'synthesis' });
   if (!result.success) {
     return Response.json({ success: false, error: result.error, code: result.code }, { status: result.status });
   }

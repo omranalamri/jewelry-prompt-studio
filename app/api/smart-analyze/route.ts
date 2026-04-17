@@ -6,7 +6,9 @@ export const maxDuration = 90;
 
 export async function POST(req: NextRequest) {
   const { messages } = await req.json();
-  const result = await handleChatRequest(messages, SMART_ANALYZE_PROMPT);
+  // Synthesis mode — structured jewelry fact extraction feeds the image
+  // generation pipeline directly, so pay for Sonnet quality here.
+  const result = await handleChatRequest(messages, SMART_ANALYZE_PROMPT, { mode: 'synthesis' });
   if (!result.success) {
     return Response.json({ success: false, error: result.error, code: result.code }, { status: result.status });
   }

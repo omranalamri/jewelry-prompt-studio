@@ -6,7 +6,8 @@ export const maxDuration = 90;
 
 export async function POST(req: NextRequest) {
   const { messages } = await req.json();
-  const result = await handleChatRequest(messages, SMART_VISION_PROMPT);
+  // Synthesis mode — structured vision output feeds downstream generation
+  const result = await handleChatRequest(messages, SMART_VISION_PROMPT, { mode: 'synthesis' });
   if (!result.success) {
     return Response.json({ success: false, error: result.error, code: result.code }, { status: result.status });
   }

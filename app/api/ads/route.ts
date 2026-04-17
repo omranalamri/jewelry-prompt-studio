@@ -68,7 +68,9 @@ Ask about: platform (Reels/TikTok/YouTube), target duration, brand name, CTA tex
 
 export async function POST(req: NextRequest) {
   const { messages } = await req.json();
-  const result = await handleChatRequest(messages, AD_BUILDER_PROMPT);
+  // Conversation mode — Q&A for ad setup, Haiku handles it. The final video
+  // blueprint drives Veo 3.1 which is where the creative quality actually lives.
+  const result = await handleChatRequest(messages, AD_BUILDER_PROMPT, { mode: 'conversation' });
   if (!result.success) {
     return Response.json({ success: false, error: result.error, code: result.code }, { status: result.status });
   }

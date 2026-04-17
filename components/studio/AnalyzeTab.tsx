@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect, Fragment } from 'react';
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, Send, RotateCcw, ImagePlus, Sparkles, X, Info } from 'lucide-react';
+import { Eye, Send, RotateCcw, ImagePlus, Sparkles, X, Info, Zap, Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,6 +36,7 @@ interface AnalyzeResult {
 }
 
 function formatInline(text: string): React.ReactNode {
+  if (!text) return null;
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => part.startsWith('**') && part.endsWith('**')
     ? <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>
@@ -43,6 +44,7 @@ function formatInline(text: string): React.ReactNode {
 }
 
 function FormatMsg({ text, isUser }: { text: string; isUser: boolean }) {
+  if (!text) return <>No response.</>;
   if (isUser) return <>{text}</>;
   const paragraphs = text.split('\n\n').filter(Boolean);
   return (
@@ -82,6 +84,12 @@ export function AnalyzeTab() {
   const [currentPhase, setCurrentPhase] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
+  // Skip-chat mode: track asset/inspiration URLs separately + direct brief + result
+  const [assetImageUrl, setAssetImageUrl] = useState<string | null>(null);
+  const [inspirationImageUrl, setInspirationImageUrl] = useState<string | null>(null);
+  const [quickBrief, setQuickBrief] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [quickResult, setQuickResult] = useState<{ resultUrl: string; concept: string | null; costUsd: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -104,25 +112,25 @@ export function AnalyzeTab() {
       });
       newImages.push({ base64: dataUrl.split(',')[1], mediaType: file.type, preview: dataUrl });
 
-      if (!referenceImageUrl) {
-        try {
-          const fd = new FormData();
-          fd.append('file', file);
-          fd.append('context', 'analyze-ref');
-          const res = await fetch('/api/upload', { method: 'POST', body: fd });
-          const json = await res.json();
-          if (json.success) {
-            const aiUrl = json.replicateUrl || json.url;
-            setReferenceImageUrl(aiUrl);
-            fetch('/api/remove-bg', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ imageUrl: aiUrl }),
-            }).then(r => r.json()).then(bgJson => {
-              if (bgJson.success && bgJson.data?.resultUrl) setReferenceImageUrl(bgJson.data.resultUrl);
-            }).catch(() => {});
+      // Upload to blob + route to correct state based on which card was clicked.
+      // 'asset' = the jewelry piece (maps to referenceImageUrl in /api/generate/*)
+      // 'reference' = the mood/inspiration image (maps to inspirationImageUrl)
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('context', refTypeRef.current === 'asset' ? 'analyze-asset' : 'analyze-insp');
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const json = await res.json();
+        if (json.success) {
+          const aiUrl = json.url || json.replicateUrl;
+          if (refTypeRef.current === 'asset') {
+            setAssetImageUrl(aiUrl);
+            if (!referenceImageUrl) setReferenceImageUrl(aiUrl); // legacy chat path
+          } else {
+            setInspirationImageUrl(aiUrl);
           }
-        } catch { /* non-critical */ }
-      }
+        }
+      } catch { /* non-critical */ }
     }
     setPendingImages(prev => [...prev, ...newImages]);
   }, [referenceImageUrl]);
@@ -174,7 +182,7 @@ export function AnalyzeTab() {
 
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.message as string,
+        content: (data.message || data.content || 'No response.') as string,
         rawJson: json.rawJson,
         phase: data.phase as string,
       }]);
@@ -219,7 +227,59 @@ export function AnalyzeTab() {
     setResult(null);
     setCurrentPhase(null);
     setReferenceImageUrl(null);
+    setAssetImageUrl(null);
+    setInspirationImageUrl(null);
+    setQuickBrief('');
+    setQuickResult(null);
   }, []);
+
+  // Skip-chat: upload once → extract-once → synthesize (cached) → Gemini 3 Pro image.
+  // Takes whatever the user has: asset image + optional inspiration + brief text.
+  const generateNow = useCallback(async () => {
+    if (!assetImageUrl) {
+      toast.error('Upload your jewelry image first');
+      return;
+    }
+    if (!quickBrief.trim()) {
+      toast.error('Describe what you want (mood, platform, audience)');
+      return;
+    }
+
+    setIsGenerating(true);
+    setQuickResult(null);
+    try {
+      const res = await fetch('/api/generate/from-facts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referenceImageUrl: assetImageUrl,           // jewelry piece
+          inspirationImageUrl: inspirationImageUrl || undefined,
+          userBrief: quickBrief.trim(),
+          platform: 'image',
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        toast.error(json.error || 'Generation failed');
+        return;
+      }
+      const data = json.data;
+      setQuickResult({
+        resultUrl: data.resultUrl,
+        concept: data.concept ?? null,
+        costUsd: data.totalCostRaw ?? 0,
+      });
+      toast.success(
+        data.synthesis?.cacheHit
+          ? `Generated (cache hit — ${data.synthesis.cacheReadTokens} tok reused)`
+          : 'Generated',
+      );
+    } catch {
+      toast.error('Network error — try again');
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [assetImageUrl, inspirationImageUrl, quickBrief]);
 
   return (
     <div className="space-y-6">
@@ -267,37 +327,92 @@ export function AnalyzeTab() {
                 </div>
                 <p className="font-medium mb-1 text-sm">Your Jewelry</p>
                 <p className="text-xs text-muted-foreground">Your actual piece to feature</p>
-                <p className="text-[10px] text-muted-foreground mt-1">The ring, necklace, pendant, or bracelet</p>
+                <p className="text-[10px] text-gold mt-1">Tip: shoot on a white background for best results</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Image previews */}
+          {/* Image previews + two-path actions */}
           {pendingImages.length > 0 && (
-            <div className="flex gap-3 p-3 rounded-xl bg-muted/50 border">
-              {pendingImages.map((img, i) => (
-                <div key={i} className="relative group">
-                  <img src={img.preview} alt="Upload" className="h-20 w-20 object-cover rounded-lg border" />
-                  <button onClick={(e) => { e.stopPropagation(); removePendingImage(i); }}
-                    className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              <Button onClick={() => sendMessage('Here are my images — analyze both and help me recreate the reference style with my jewelry.')}
-                className="gold-gradient text-white border-0 hover:opacity-90 self-center">
-                <Send className="h-4 w-4 mr-2" /> Analyze
-              </Button>
+            <div className="space-y-3 p-4 rounded-xl bg-muted/50 border">
+              {/* Thumbnails */}
+              <div className="flex gap-3 flex-wrap">
+                {pendingImages.map((img, i) => (
+                  <div key={i} className="relative group">
+                    <img src={img.preview} alt="Upload" className="h-20 w-20 object-cover rounded-lg border" />
+                    <button onClick={(e) => { e.stopPropagation(); removePendingImage(i); }}
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Brief input — only meaningful when user picks Quick Generate */}
+              <textarea
+                value={quickBrief}
+                onChange={(e) => setQuickBrief(e.target.value)}
+                placeholder="Describe your campaign (platform, mood, audience, cultural context)…"
+                className="w-full min-h-[60px] p-3 rounded-lg border bg-background text-sm resize-none"
+                onClick={(e) => e.stopPropagation()}
+              />
+
+              {/* Two paths — default is Generate now (cheaper, faster, higher quality prompts) */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={generateNow}
+                  disabled={isGenerating || !assetImageUrl || !quickBrief.trim()}
+                  className="gold-gradient text-white border-0 hover:opacity-90 flex-1"
+                  title={!assetImageUrl ? 'Upload your jewelry image first' : undefined}
+                >
+                  {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
+                  Generate now
+                </Button>
+                <Button
+                  onClick={() => sendMessage('Here are my images — analyze both and help me recreate the reference style with my jewelry.')}
+                  disabled={isGenerating}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" /> Chat to refine
+                </Button>
+              </div>
+
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Info className="h-3 w-3" />
+                <span>
+                  <strong>Generate now</strong> skips the chat and produces an image straight from your brief (cheaper + faster).
+                  <strong> Chat to refine</strong> opens a creative-director conversation for complex campaigns.
+                </span>
+              </p>
             </div>
+          )}
+
+          {/* Quick generate result */}
+          {quickResult && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border-2 border-gold/40 p-4 bg-gold/5">
+              <div className="flex items-center gap-2 mb-3">
+                <Zap className="h-4 w-4 text-gold" />
+                <span className="text-xs uppercase tracking-wider text-gold font-medium">Generated</span>
+                <span className="text-[10px] text-muted-foreground ml-auto">
+                  ${quickResult.costUsd.toFixed(3)} total
+                </span>
+              </div>
+              <img src={quickResult.resultUrl} alt="Generated" className="rounded-lg border w-full max-w-md mx-auto" />
+              {quickResult.concept && (
+                <p className="text-xs text-muted-foreground mt-3 italic">&ldquo;{quickResult.concept}&rdquo;</p>
+              )}
+            </motion.div>
           )}
 
           {/* How it works */}
           <div className="grid grid-cols-4 gap-2">
             {[
-              { step: '1', title: 'Reference', desc: 'Upload the look' },
-              { step: '2', title: 'Jewelry', desc: 'Upload your piece' },
-              { step: '3', title: 'Chat', desc: 'I ask key details' },
-              { step: '4', title: 'Generate', desc: 'Get prompts + images' },
+              { step: '1', title: 'Jewelry', desc: 'Upload your piece' },
+              { step: '2', title: 'Reference', desc: 'Optional mood image' },
+              { step: '3', title: 'Brief', desc: 'One line or chat' },
+              { step: '4', title: 'Generate', desc: 'Gemini 3 Pro image' },
             ].map(s => (
               <div key={s.step} className="text-center p-2 rounded-xl bg-muted/50">
                 <div className="h-6 w-6 rounded-full gold-gradient text-white text-[10px] font-bold flex items-center justify-center mx-auto mb-1">{s.step}</div>
