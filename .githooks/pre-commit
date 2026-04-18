@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Coffer pre-commit secret scanner.
+#
+# Blocks commits whose staged diff contains common secret shapes:
+# GitHub PATs, OpenAI keys, AWS access keys, Google API keys, Slack tokens,
+# and PEM-encoded private keys. Matches live output is redacted.
+#
+# Install:     git config core.hooksPath .githooks
+# Bypass (rare, audited use only): git commit --no-verify
+
+set -euo pipefail
+
+PATTERNS='ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|ghs_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk-[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|xox[baprs]-[0-9a-zA-Z-]{10,}|-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----'
+
+# Only inspect added lines in the staged diff. `-U0` trims surrounding
+# context so we don't false-positive on unchanged nearby lines.
+added=$(git diff --cached -U0 --diff-filter=ACM -- . \
+    | grep -E '^\+' \
+    | grep -vE '^\+\+\+' || true)
+
+if [ -z "$added" ]; then
+    exit 0
+fi
+
+# Exempt this hook file itself (it contains the patterns as regex strings)
+# and any test fixtures explicitly marked.
+hits=$(echo "$added" \
+    | grep -vE '\.githooks/pre-commit|tests/fixtures/.*\.allow-secret' \
+    | grep -E "$PATTERNS" || true)
+
+if [ -n "$hits" ]; then
+    echo ""
+    echo "❌ pre-commit BLOCKED: staged changes contain a secret-shaped string."
+    echo ""
+    echo "$hits" | head -3 | sed -E '
+        s/ghp_[A-Za-z0-9]+/ghp_<REDACTED>/g
+        s/gho_[A-Za-z0-9]+/gho_<REDACTED>/g
+        s/ghs_[A-Za-z0-9]+/ghs_<REDACTED>/g
+        s/github_pat_[A-Za-z0-9_]+/github_pat_<REDACTED>/g
+        s/sk-[A-Za-z0-9]+/sk-<REDACTED>/g
+        s/AKIA[0-9A-Z]+/AKIA<REDACTED>/g
+        s/AIza[0-9A-Za-z_-]+/AIza<REDACTED>/g
+    '
+    echo ""
+    echo "If this is a false positive, add the file under tests/fixtures/"
+    echo "with suffix '.allow-secret', or commit with --no-verify."
+    exit 1
+fi
+
+exit 0
