@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-PATTERNS='ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|ghs_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk-[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|xox[baprs]-[0-9a-zA-Z-]{10,}|-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----'
+PATTERNS='ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|ghs_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk-[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|xox[baprs]-[0-9a-zA-Z-]{10,}|-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----|rpa_[A-Za-z0-9]{30,}|\b[0-9]{8,11}:[A-Za-z0-9_-]{35}\b'
 
 # Only inspect added lines in the staged diff. `-U0` trims surrounding
 # context so we don't false-positive on unchanged nearby lines.
@@ -40,6 +40,8 @@ if [ -n "$hits" ]; then
         s/sk-[A-Za-z0-9]+/sk-<REDACTED>/g
         s/AKIA[0-9A-Z]+/AKIA<REDACTED>/g
         s/AIza[0-9A-Za-z_-]+/AIza<REDACTED>/g
+        s/rpa_[A-Za-z0-9]+/rpa_<REDACTED>/g
+        s/\b[0-9]{8,11}:[A-Za-z0-9_-]{35,}/<TELEGRAM_BOT_TOKEN_REDACTED>/g
     '
     echo ""
     echo "If this is a false positive, add the file under tests/fixtures/"
